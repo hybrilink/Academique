@@ -318,6 +318,12 @@
         document.getElementById('password').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') document.getElementById('loginBtn').click();
         });
+ 
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+            });
+        }
     </script>
 </body>
 </html>
