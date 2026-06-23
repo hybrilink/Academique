@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Publication Cours - Académique</title>
+    <meta name="theme-color" content="#003366">
+    
+    <link rel="manifest" href="manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { 
+            --primary-blue: #003366; 
+            --dark-blue: #002244; 
+            --accent-yellow: #ffb347; 
+            --light-gray: #f0f2f5;
+            --success-green: #28a745;
+        }
+        
+        body { 
+            background: var(--light-gray); 
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar-custom { 
+            background: var(--primary-blue); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            padding: 12px 0;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+        
+        .back-btn {
+            background: var(--accent-yellow);
+            color: var(--primary-blue);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .back-btn:hover {
+            background: #ff9800;
+            transform: translateY(-2px);
+            color: var(--primary-blue);
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s ease;
+            margin-bottom: 30px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 20px 25px;
+            margin: -30px -30px 25px -30px;
+        }
+        
+        .card-header-custom h4 {
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        .card-header-custom h4 i {
+            color: var(--accent-yellow);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(0,51,102,0.25);
+        }
+        
+        .btn-submit {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn-submit:hover {
+            background: var(--dark-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .cours-liste-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .cours-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary-blue);
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .cours-item:hover {
+            background: #e9ecef;
+            transform: translateX(3px);
+        }
+        
+        .cours-info {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .cours-nom {
+            font-weight: bold;
+            color: var(--primary-blue);
+            font-size: 16px;
+        }
+        
+        .cours-details {
+            font-size: 13px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .cours-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .badge-credit {
+            background: #e8f4fd;
+            color: var(--primary-blue);
+        }
+        
+        .badge-promo {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-prof {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+        
+        .btn-delete:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #888;
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .toast { animation: slideInRight 0.3s ease-out; }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .footer-info {
+            text-align: center;
+            margin-top: auto;
+            padding: 20px 0;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .footer-info img {
+            border-radius: 20px;
+            vertical-align: middle;
+        }
+        
+        .info-alert {
+            background: #e8f4fd;
+            border-left: 4px solid var(--primary-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        
+        .info-alert i {
+            color: var(--primary-blue);
+            font-size: 18px;
+        }
+        
+        @media (max-width: 768px) {
+            .content-card { padding: 20px; }
+            .card-header-custom { margin: -20px -20px 20px -20px; padding: 15px 20px; }
+            .cours-item { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <a class="navbar-brand text-white" href="#">
+                <i class="bi bi-book-fill"></i> FACULTÉ AGRONOMIQUE - UNILU
+            </a>
+            <div class="navbar-right">
+                <a href="academique.html" class="back-btn">
+                    <i class="bi bi-house-door-fill"></i> Accueil
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4" style="flex: 1;">
+        <div id="toastContainer" class="toast-notification"></div>
+        
+        <!-- Formulaire de création de cours -->
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h4><i class="bi bi-journal-plus"></i> Publier un nouveau cours</h4>
+            </div>
+            
+            <div class="info-alert">
+                <i class="bi bi-info-circle-fill"></i>
+                <strong>Information :</strong> Remplissez tous les champs pour créer un nouveau cours. 
+                Le cours sera associé à une promotion et à un professeur.
+            </div>
+            
+            <form id="coursForm">
+                <div class="row">
+                    <!-- Nom du cours -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="nomCours">
+                            <i class="bi bi-pencil-fill"></i> Nom du cours
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="nomCours" 
+                            required 
+                            placeholder="Ex: Agronomie Générale, Chimie Organique..."
+                        >
+                    </div>
+                    
+                    <!-- Nombre de crédits -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="creditCours">
+                            <i class="bi bi-star-fill"></i> Nombre de crédits
+                        </label>
+                        <input 
+                            type="number" 
+                            class="form-control" 
+                            id="creditCours" 
+                            required 
+                            min="1" 
+                            max="10" 
+                            placeholder="Ex: 3"
+                        >
+                        <small class="text-muted">Entre 1 et 10 crédits</small>
+                    </div>
+                    
+                    <!-- Sélection du professeur -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="professeurCours">
+                            <i class="bi bi-person-workspace"></i> Professeur
+                        </label>
+                        <select class="form-select" id="professeurCours" required>
+                            <option value="">-- Sélectionner un professeur --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Sélection de la promotion -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label" for="promotionCours">
+                            <i class="bi bi-trophy-fill"></i> Promotion concernée
+                        </label>
+                        <select class="form-select" id="promotionCours" required>
+                            <option value="">-- Sélectionner une promotion --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="bi bi-cloud-upload-fill"></i> Publier le cours
+                </button>
+            </form>
+        </div>
+        
+        <!-- Liste des cours existants -->
+        <div class="cours-liste-card">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 style="color: var(--primary-blue); margin: 0;">
+                    <i class="bi bi-list-ul"></i> Liste des cours publiés
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary" id="refreshCoursBtn">
+                    <i class="bi bi-arrow-repeat"></i> Actualiser
+                </button>
+            </div>
+            
+            <div id="coursListe">
+                <div class="text-center py-4">
+                    <div class="loading-spinner" style="border-color: #e0e0e0; border-top-color: var(--primary-blue); width: 30px; height: 30px;"></div>
+                    <p class="mt-2 text-muted">Chargement des cours...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="container">
+        <div class="footer-info">
+            <i class="bi bi-shield-check"></i> HYBRILINK-TECH - Votre partenaire digital de A à Z<br>
+            <img src="t.png" width="40px" alt="HYBRILINK" onerror="this.style.display='none'">
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIGURATION FIREBASE ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
+            authDomain: "fsa-unilu.firebaseapp.com",
+            projectId: "fsa-unilu",
+            storageBucket: "fsa-unilu.firebasestorage.app",
+            messagingSenderId: "36551990738",
+            appId: "1:36551990738:web:e91fdcb53f8aab5d1b7c0b"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        
+        // ========== VARIABLES ==========
+        let currentUser = null;
+        let allProfesseurs = [];
+        let allPromotions = [];
+        let allCours = [];
+        
+        // ========== VÉRIFICATION SESSION ==========
+        const session = localStorage.getItem('session_academique');
+        if (!session) {
+            window.location.href = 'login-academique.html';
+        }
+        
+        try {
+            const sessionData = JSON.parse(session);
+            if (Date.now() > sessionData.expires) {
+                localStorage.removeItem('session_academique');
+                window.location.href = 'login-academique.html';
+            }
+            currentUser = sessionData;
+        } catch(e) {
+            localStorage.removeItem('session_academique');
+            window.location.href = 'login-academique.html';
+        }
+        
+        // ========== FONCTIONS UTILITAIRES ==========
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const bgColor = type === 'success' ? '#28a745' : (type === 'warning' ? '#ffc107' : '#dc3545');
+            const textColor = type === 'warning' ? '#333' : 'white';
+            const icon = type === 'success' ? 'check-circle-fill' : (type === 'warning' ? 'exclamation-triangle-fill' : 'x-circle-fill');
+            const toastHtml = `<div class="toast" style="background: ${bgColor}; color: ${textColor}; border-radius: 10px; margin-bottom: 10px;"><div class="toast-body"><i class="bi bi-${icon} me-2"></i>${message}</div></div>`;
+            container.insertAdjacentHTML('afterbegin', toastHtml);
+            setTimeout(() => { if(container.firstElementChild) container.firstElementChild.remove(); }, 4000);
+        }
+        
+        function escapeHtml(t) { 
+            if(!t) return ''; 
+            const d = document.createElement('div'); 
+            d.textContent = t; 
+            return d.innerHTML; 
+        }
+        
+        // ========== CHARGEMENT DES DONNÉES ==========
+        async function chargerProfesseurs() {
+            try {
+                const snapshot = await db.collection('utilisateurs')
+                    .where('role', '==', 'professeur')
+                    .get();
+                
+                allProfesseurs = [];
+                snapshot.forEach(doc => {
+                    allProfesseurs.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Trier par nom
+                allProfesseurs.sort((a, b) => (a.nomComplet || '').localeCompare(b.nomComplet || ''));
+                
+                // Remplir le select
+                const select = document.getElementById('professeurCours');
+                if (select) {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">-- Sélectionner un professeur --</option>';
+                    allProfesseurs.forEach(prof => {
+                        select.innerHTML += `<option value="${prof.id}">${escapeHtml(prof.nomComplet)} (${escapeHtml(prof.specialite || 'N/A')})</option>`;
+                    });
+                    if (currentVal) select.value = currentVal;
+                }
+            } catch (error) {
+                console.error('Erreur chargement professeurs:', error);
+            }
+        }
+        
+        async function chargerPromotions() {
+            try {
+                const snapshot = await db.collection('promotions').get();
+                
+                allPromotions = [];
+                snapshot.forEach(doc => {
+                    allPromotions.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Trier par nom
+                allPromotions.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+                
+                // Remplir le select
+                const select = document.getElementById('promotionCours');
+                if (select) {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">-- Sélectionner une promotion --</option>';
+                    allPromotions.forEach(promo => {
+                        select.innerHTML += `<option value="${promo.id}">${escapeHtml(promo.nom)}</option>`;
+                    });
+                    if (currentVal) select.value = currentVal;
+                }
+            } catch (error) {
+                console.error('Erreur chargement promotions:', error);
+            }
+        }
+        
+        async function chargerCours() {
+            try {
+                const snapshot = await db.collection('cours')
+                    .orderBy('dateCreation', 'desc')
+                    .get();
+                
+                allCours = [];
+                snapshot.forEach(doc => {
+                    allCours.push({ id: doc.id, ...doc.data() });
+                });
+                
+                afficherCours();
+            } catch (error) {
+                console.error('Erreur chargement cours:', error);
+                document.getElementById('coursListe').innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-triangle-fill" style="color: #dc3545;"></i>
+                        <h5>Erreur de chargement</h5>
+                        <p>${error.message}</p>
+                    </div>`;
+            }
+        }
+        
+        function afficherCours() {
+            const container = document.getElementById('coursListe');
+            if (!container) return;
+            
+            if (allCours.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h5>Aucun cours publié</h5>
+                        <p>Utilisez le formulaire ci-dessus pour créer votre premier cours.</p>
+                    </div>`;
+                return;
+            }
+            
+            // Créer les maps pour les noms
+            const profMap = {};
+            allProfesseurs.forEach(p => profMap[p.id] = p.nomComplet);
+            
+            const promoMap = {};
+            allPromotions.forEach(p => promoMap[p.id] = p.nom);
+            
+            let html = '';
+            allCours.forEach(cours => {
+                const profNom = profMap[cours.professeurId] || cours.professeurNom || 'N/A';
+                const promoNom = promoMap[cours.promotionId] || cours.promotionNom || 'N/A';
+                const dateCreation = cours.dateCreation ? 
+                    new Date(cours.dateCreation.toDate()).toLocaleDateString('fr-FR', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                    }) : '-';
+                
+                html += `
+                    <div class="cours-item">
+                        <div class="cours-info">
+                            <div class="cours-nom">
+                                <i class="bi bi-book-fill"></i> ${escapeHtml(cours.nom)}
+                            </div>
+                            <div class="cours-details">
+                                <span class="cours-badge badge-credit">
+                                    <i class="bi bi-star-fill"></i> ${cours.credits || 0} crédit(s)
+                                </span>
+                                <span class="cours-badge badge-prof">
+                                    <i class="bi bi-person-fill"></i> ${escapeHtml(profNom)}
+                                </span>
+                                <span class="cours-badge badge-promo">
+                                    <i class="bi bi-trophy-fill"></i> ${escapeHtml(promoNom)}
+                                </span>
+                                <br>
+                                <small class="text-muted">Créé le ${dateCreation}</small>
+                            </div>
+                        </div>
+                        <button class="btn-delete" onclick="supprimerCours('${cours.id}')">
+                            <i class="bi bi-trash-fill"></i> Supprimer
+                        </button>
+                    </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // ========== SUPPRESSION D'UN COURS ==========
+        window.supprimerCours = async function(coursId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce cours ? Cette action est irréversible.')) {
+                return;
+            }
+            
+            try {
+                await db.collection('cours').doc(coursId).delete();
+                showToast('Cours supprimé avec succès', 'warning');
+                
+                // Mettre à jour la liste locale
+                allCours = allCours.filter(c => c.id !== coursId);
+                afficherCours();
+            } catch (error) {
+                console.error('Erreur suppression cours:', error);
+                showToast('Erreur lors de la suppression: ' + error.message, 'danger');
+            }
+        };
+        
+        // ========== SOUMISSION DU FORMULAIRE ==========
+        document.getElementById('coursForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nomCours = document.getElementById('nomCours').value.trim();
+            const creditCours = parseInt(document.getElementById('creditCours').value);
+            const professeurId = document.getElementById('professeurCours').value;
+            const promotionId = document.getElementById('promotionCours').value;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // Validation
+            if (!nomCours) {
+                showToast('Veuillez entrer le nom du cours', 'warning');
+                return;
+            }
+            
+            if (isNaN(creditCours) || creditCours < 1 || creditCours > 10) {
+                showToast('Le nombre de crédits doit être entre 1 et 10', 'warning');
+                return;
+            }
+            
+            if (!professeurId) {
+                showToast('Veuillez sélectionner un professeur', 'warning');
+                return;
+            }
+            
+            if (!promotionId) {
+                showToast('Veuillez sélectionner une promotion', 'warning');
+                return;
+            }
+            
+            // Récupérer les noms pour l'affichage
+            const professeur = allProfesseurs.find(p => p.id === professeurId);
+            const promotion = allPromotions.find(p => p.id === promotionId);
+            
+            const professeurNom = professeur ? professeur.nomComplet : 'Inconnu';
+            const promotionNom = promotion ? promotion.nom : 'Inconnue';
+            
+            // Désactiver le bouton
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner me-2"></span> Publication en cours...';
+            
+            try {
+                // Créer le cours dans Firestore
+                const coursData = {
+                    nom: nomCours,
+                    credits: creditCours,
+                    professeurId: professeurId,
+                    professeurNom: professeurNom,
+                    promotionId: promotionId,
+                    promotionNom: promotionNom,
+                    creePar: currentUser.id,
+                    creeParNom: currentUser.nomComplet,
+                    dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('cours').add(coursData);
+                
+                showToast('✅ Cours publié avec succès !', 'success');
+                
+                // Réinitialiser le formulaire
+                document.getElementById('coursForm').reset();
+                
+                // Recharger la liste
+                await chargerCours();
+                
+            } catch (error) {
+                console.error('Erreur création cours:', error);
+                showToast('Erreur lors de la publication: ' + error.message, 'danger');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-cloud-upload-fill"></i> Publier le cours';
+            }
+        });
+        
+        // ========== BOUTON ACTUALISER ==========
+        document.getElementById('refreshCoursBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('refreshCoursBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="width:16px;height:16px;border-width:2px;border-color:#e0e0e0;border-top-color:var(--primary-blue);"></span>';
+            
+            await chargerCours();
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Actualiser';
+            showToast('Liste actualisée', 'success');
+        });
+        
+        // ========== INITIALISATION ==========
+        async function init() {
+            await Promise.all([
+                chargerProfesseurs(),
+                chargerPromotions()
+            ]);
+            await chargerCours();
+        }
+        
+        init();
+        
+        console.log('✅ Page Publication Cours chargée');
+    </script>
+</body>
+</html>

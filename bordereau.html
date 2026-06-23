@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Enregistrement Bordereau - Faculté Agronomique</title>
+    <meta name="application-name" content="hybrilink enregistrement">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="hybrilink enregistrement">
+    <meta name="description" content="Dashboard enregistrement - Consultation">
+    <meta name="theme-color" content="#003366">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="icon" type="image/png" href="icon-96x96.png">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { 
+            --primary-blue: #003366; 
+            --dark-blue: #002244; 
+            --accent-yellow: #ffb347; 
+            --success-green: #28a745; 
+            --gold: #bf953f;
+            --silver-gradient: linear-gradient(135deg, #e8e8e8, #c0c0c0, #f5f5f5, #a0a0a0, #e0e0e0, #c8c8c8);
+        }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .navbar-custom { background: var(--primary-blue); box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 10px 0; }
+        .btn-action { background: var(--primary-blue); color: white; border: none; padding: 12px 25px; border-radius: 10px; transition: all 0.3s; font-weight: 600; }
+        .btn-action:hover { background: var(--dark-blue); transform: translateY(-2px); }
+        .btn-action:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-success-custom { background: var(--success-green); color: white; border: none; padding: 12px 25px; border-radius: 10px; transition: all 0.3s; font-weight: 600; }
+        .btn-success-custom:hover { background: #1e7e34; transform: translateY(-2px); }
+        .btn-warning-custom { background: var(--accent-yellow); color: var(--primary-blue); border: none; padding: 12px 25px; border-radius: 10px; transition: all 0.3s; font-weight: 600; }
+        .btn-warning-custom:hover { background: #ff9800; transform: translateY(-2px); }
+        
+        .btn-print-all {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-print-all:hover {
+            background: linear-gradient(135deg, #5b4cdb, #8c7ae6);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+        }
+        .btn-print-all:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-home { 
+            background: var(--accent-yellow); 
+            color: var(--primary-blue); 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 10px; 
+            transition: all 0.3s; 
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-home:hover { 
+            background: #ff9800; 
+            transform: translateY(-2px); 
+            color: var(--primary-blue);
+        }
+        
+        .card { border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); color: white; border-radius: 15px 15px 0 0; padding: 15px 20px; }
+        .step-container { display: none; animation: fadeIn 0.3s ease; }
+        .step-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .step-indicator { display: flex; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .step { width: 40px; height: 40px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; font-weight: bold; margin: 0 10px; position: relative; }
+        .step.active { background: var(--primary-blue); color: white; }
+        .step.completed { background: var(--success-green); color: white; }
+        .step-label { position: absolute; top: 45px; font-size: 12px; white-space: nowrap; color: #666; }
+        .step-line { flex: 1; height: 2px; background: #ddd; margin: 19px 0; max-width: 50px; }
+        .bordereau-input-group { background: #f8f9fa; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+        .bordereau-card { background: white; border-radius: 15px; padding: 20px; margin-top: 15px; border-left: 4px solid var(--primary-blue); }
+        .bordereau-valid { border-left-color: var(--success-green); background: #e8f5e9; }
+        .bordereau-invalid { border-left-color: #dc3545; background: #ffebee; }
+        .toast-notification { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; }
+        .notification-toast { animation: slideInRight 0.3s ease-out; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid var(--primary-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .student-info-card { background: linear-gradient(135deg, #667eea20, #764ba220); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .success-badge { background: var(--success-green); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+        .promotion-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .promotion-btn { background: #f8f9fa; border: 2px solid var(--primary-blue); color: var(--primary-blue); padding: 8px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .promotion-btn:hover, .promotion-btn.active { background: var(--primary-blue); color: white; transform: translateY(-2px); }
+        .footer { background: #1a1a2e; color: #fff; text-align: center; padding: 15px 0; margin-top: auto; font-size: 14px; }
+        .registered-table { width: 100%; border-collapse: collapse; }
+        .registered-table th, .registered-table td { padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: left; }
+        .registered-table th { background: var(--primary-blue); color: white; font-weight: 600; }
+        .registered-table tr:hover { background: #f8f9fa; }
+        .search-export-bar { background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+        .search-group { flex: 1; min-width: 200px; }
+        .search-input-group { position: relative; }
+        .search-input-group i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; }
+        .search-input-group input { padding-left: 35px; }
+        .badge-premier { background-color: #28a745; color: white; }
+        .badge-deuxieme { background-color: #ff9800; color: white; }
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        /* Styles de la carte */
+        .carte-wrapper {
+            perspective: 1400px;
+            margin: 16px auto;
+            max-width: 680px;
+            cursor: pointer;
+        }
+        
+        .livre-3d {
+            position: relative;
+            width: 100%;
+            transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        
+        .livre-3d.ouvert {
+            transform: rotateY(180deg);
+        }
+        
+        .livre-contenu {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: row !important;
+            backface-visibility: hidden;
+            background: #fdf8ed;
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            overflow: hidden;
+            min-height: 380px;
+        }
+        
+        .page-livre {
+            flex: 1;
+            position: relative;
+            padding: 14px 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .page-gauche {
+            border-right: 1px solid #e0cba0;
+            background: linear-gradient(135deg, #fffef7 0%, #f5edd6 100%);
+        }
+        
+        .page-droite {
+            background: linear-gradient(135deg, #f8f6f0 0%, #e8e0cc 100%);
+        }
+        
+        .livre-contenu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, #bf953f, #fcf6ba, #bf953f);
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+        
+        .page-gauche::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 100%;
+            background: linear-gradient(to left, rgba(0,0,0,0.06), transparent);
+            pointer-events: none;
+        }
+        
+        .page-droite::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 10px;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.06), transparent);
+            pointer-events: none;
+        }
+        
+        .cover-livre {
+            position: relative;
+            width: 100%;
+            backface-visibility: hidden;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        
+        .cover-livre.recto {
+            transform: rotateY(0deg);
+            z-index: 2;
+        }
+        
+        .cover-livre.verso {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotateY(180deg);
+            z-index: 1;
+        }
+        
+        .cover-card {
+            background: linear-gradient(135deg, #001a33 0%, #003366 50%, #001a33 100%);
+            padding: 30px 20px;
+            text-align: center;
+            min-height: 380px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid var(--gold);
+            border-radius: 14px;
+        }
+        
+        .cover-logo-img {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            border: 2px solid var(--gold);
+            overflow: hidden;
+        }
+        
+        .cover-logo-img img { width: 70px; height: 70px; object-fit: contain; }
+        .cover-title { color: var(--gold); font-size: 1.2rem; font-weight: bold; letter-spacing: 1px; }
+        .cover-subtitle { color: #ffd700; font-size: 0.75rem; margin-top: 6px; }
+        .cover-footer { margin-top: 25px; color: rgba(255,255,255,0.5); font-size: 0.65rem; }
+        .instruction-text { position: absolute; bottom: 15px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.65rem; }
+        
+        .page-titre {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+            border-bottom: 1.5px solid var(--gold);
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        
+        .photo-container-page {
+            width: 75px;
+            height: 90px;
+            border: 1.5px solid var(--gold);
+            background: #f5f0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            position: relative;
+        }
+        .photo-placeholder { font-size: 42px; color: #bbb; }
+        
+        .scellement-argent-page {
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            width: 52px;
+            height: 52px;
+            background: var(--silver-gradient);
+            background-size: 200% 200%;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5.5px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.2;
+            padding: 4px;
+            z-index: 11;
+            font-family: 'Arial', sans-serif;
+            color: #1a3a5c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 12px rgba(191, 149, 63, 0.6);
+            animation: silverShine 1.5s ease-in-out infinite, silverRotate 4s linear infinite;
+            backdrop-filter: blur(0.5px);
+        }
+        
+        @keyframes silverShine {
+            0% { background-position: 0% 0%; box-shadow: 0 0 8px rgba(191,149,63,0.4); border-color: #bf953f; }
+            50% { background-position: 100% 50%; box-shadow: 0 0 20px rgba(255,215,0,0.7); border-color: #ffd700; }
+            100% { background-position: 0% 0%; box-shadow: 0 0 8px rgba(191,149,63,0.4); border-color: #bf953f; }
+        }
+        @keyframes silverRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .scellement-argent-page:hover { animation: silverShine 0.8s ease-in-out infinite, silverRotate 1.5s linear infinite; }
+        
+        .border-frame-page {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 1px solid;
+            border-image: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c) 1;
+            pointer-events: none;
+            border-radius: 5px;
+        }
+        
+        .qr-wrapper-page {
+            width: 75px;
+            height: 75px;
+            border: 1.5px solid var(--primary-blue);
+            padding: 4px;
+            background: white;
+            border-radius: 8px;
+        }
+        .qr-wrapper-page img { width: 100%; height: 100%; object-fit: contain; }
+        
+        .id-number-page {
+            font-family: 'Courier New', monospace;
+            background: #003366;
+            color: var(--gold);
+            padding: 2px 8px;
+            font-weight: bold;
+            display: inline-block;
+            font-size: 8px;
+            border-radius: 4px;
+        }
+        
+        .signature-officielle-page { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--gold); text-align: center; }
+        .signature-decanat-page { font-family: 'Brush Script MT', cursive; font-size: 11px; font-weight: bold; }
+        .signature-ligne-page { width: 90px; height: 1.5px; background: var(--gold); margin: 4px auto; }
+        .titre-doyen { font-size: 6.5px; }
+        .status-valid-page { background: var(--success-green); color: white; padding: 2px 8px; border-radius: 15px; font-size: 7.5px; }
+        .status-expired-page { background: #dc3545; color: white; padding: 2px 8px; border-radius: 15px; font-size: 7.5px; }
+        
+        .watermark-centre {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40%;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .info-list {
+            list-style: none;
+            padding-left: 0;
+            font-size: 8px;
+            line-height: 1.45;
+            margin-bottom: 8px;
+        }
+        .info-list li {
+            padding-left: 14px;
+            position: relative;
+            margin-bottom: 5px;
+        }
+        .info-list li:before { content: "✓"; position: absolute; left: 0; color: var(--gold); font-size: 7px; }
+        
+        .micro-text-page {
+            font-size: 5.5px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 8px;
+            padding-top: 4px;
+            border-top: 0.5px solid #eee;
+        }
+        
+        .entete-univ {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--gold);
+            padding-bottom: 5px;
+        }
+        .mini-logo-univ {
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 30%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid var(--gold);
+        }
+        .mini-logo-univ img {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+        }
+        .titre-avec-logo {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+            margin: 0;
+            line-height: 1.2;
+        }
+        
+        /* Modal pour afficher la carte */
+        .carte-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .carte-modal-content {
+            background: transparent;
+            max-width: 700px;
+            width: 100%;
+        }
+        .carte-modal-close {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            background: white;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            z-index: 10001;
+        }
+        
+        @media (max-width: 600px) {
+            .livre-contenu {
+                min-height: 340px;
+            }
+            .page-livre {
+                padding: 10px 8px;
+            }
+            .photo-container-page {
+                width: 65px;
+                height: 82px;
+            }
+            .qr-wrapper-page {
+                width: 65px;
+                height: 65px;
+            }
+            .scellement-argent-page {
+                width: 48px;
+                height: 48px;
+                font-size: 5px;
+            }
+            .cover-card {
+                min-height: 340px;
+            }
+            .action-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom no-print">
+        <div class="container">
+            <a class="navbar-brand text-white" href="#">
+                <i class="bi bi-cash-stack"></i> Gestion des Paiements - Faculté Agronomique
+            </a>
+            <span class="text-white-50">
+                <i class="bi bi-person-badge"></i> Agent Paiement
+            </span>
+        </div>
+    </nav>
+    
+    <div class="container mt-4 no-print" style="flex: 1;">
+        <div id="toastContainer" class="toast-notification"></div>
+        
+        <div class="action-bar">
+            <h4><i class="bi bi-qr-code-scan me-2" style="color: var(--primary-blue);"></i>Enregistrement Bordereau</h4>
+            <div class="action-buttons">
+                <button class="btn-print-all" id="printAllCartesBtn" title="Imprimer toutes les cartes (6 par page)">
+                    <i class="bi bi-printer-fill"></i> 🖨️ Imprimer toutes les cartes
+                </button>
+                <a href="academique.html" class="btn-home">
+                    <i class="bi bi-house-door-fill"></i> Accueil
+                </a>
+            </div>
+        </div>
+        
+        <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="enregistrement-tab" data-bs-toggle="tab" data-bs-target="#enregistrement" type="button" role="tab">
+                    <i class="bi bi-pencil-square"></i> Enregistrement Paiement
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="succes-tab" data-bs-toggle="tab" data-bs-target="#succes" type="button" role="tab">
+                    <i class="bi bi-check-circle-fill"></i> Enregistrements Réussis
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content">
+            <!-- Onglet Enregistrement -->
+            <div class="tab-pane fade show active" id="enregistrement" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-upc-scan"></i> Vérification et Enregistrement par Bordereau</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="step-indicator" id="stepIndicator"></div>
+                        
+                        <div id="step1" class="step-container active">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-calendar2-week" style="font-size: 48px; color: var(--primary-blue);"></i>
+                                <h4 class="mt-3">Sélectionnez le semestre</h4>
+                                <p class="text-muted">Choisissez le semestre pour lequel vous souhaitez vérifier les paiements</p>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="col-md-5 mb-3">
+                                    <div class="card text-center h-100" style="cursor: pointer;" id="selectPremierSemestre">
+                                        <div class="card-body">
+                                            <i class="bi bi-calendar-check" style="font-size: 48px; color: #28a745;"></i>
+                                            <h5 class="mt-3">Premier Semestre</h5>
+                                            <p class="text-muted" id="premierSemestreFichesListe">Chargement...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <div class="card text-center h-100" style="cursor: pointer;" id="selectDeuxiemeSemestre">
+                                        <div class="card-body">
+                                            <i class="bi bi-calendar-week" style="font-size: 48px; color: #ff9800;"></i>
+                                            <h5 class="mt-3">Deuxième Semestre</h5>
+                                            <p class="text-muted" id="deuxiemeSemestreFichesListe">Chargement...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="step2" class="step-container">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-receipt" style="font-size: 48px; color: var(--primary-blue);"></i>
+                                <h4 class="mt-3">Vérification du Bordereau</h4>
+                                <p class="text-muted">Entrez le numéro de bordereau/reçu</p>
+                            </div>
+                            
+                            <div class="bordereau-input-group">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                                    <input type="text" class="form-control form-control-lg" id="uniqueBordereauInput" placeholder="Numéro du bordereau/reçu" autocomplete="off">
+                                    <button class="btn btn-warning-custom" id="verifyUniqueBordereauBtn"><i class="bi bi-check-lg"></i> Vérifier</button>
+                                </div>
+                                <div id="uniqueBordereauResult" class="bordereau-card" style="display: none;"></div>
+                            </div>
+                            
+                            <div id="studentInfoContainer" style="display: none;"></div>
+                            <div id="missingFichesContainer" style="display: none;"></div>
+                            
+                            <div class="text-center mt-4">
+                                <button class="btn btn-secondary" id="resetStep2Btn"><i class="bi bi-arrow-repeat"></i> Recommencer</button>
+                                <button class="btn btn-success-custom" id="directValidateBtn" style="display: none;"><i class="bi bi-check-circle"></i> Enregistrer l'étudiant</button>
+                                <button class="btn btn-action" id="continueMissingBtn" style="display: none;">Continuer vers les fiches manquantes <i class="bi bi-arrow-right"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div id="step3" class="step-container">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-receipt" style="font-size: 48px; color: var(--primary-blue);"></i>
+                                <h4 class="mt-3">Fiches manquantes</h4>
+                                <p class="text-muted">Veuillez fournir les bordereaux pour les fiches non encore payées</p>
+                            </div>
+                            <div id="studentInfoStep3" style="display: none;"></div>
+                            <div id="missingBordereauxContainer"></div>
+                            <div class="text-center mt-4">
+                                <button class="btn btn-secondary" id="resetStep3Btn"><i class="bi bi-arrow-repeat"></i> Recommencer</button>
+                                <button class="btn btn-success-custom" id="validateMissingBtn" style="display: none;"><i class="bi bi-check-circle"></i> Enregistrer l'étudiant</button>
+                            </div>
+                        </div>
+                        
+                        <div id="stepFinal" class="step-container">
+                            <div class="text-center" id="finalResult"></div>
+                            <div class="text-center mt-4">
+                                <button class="btn btn-action" id="newRegistrationBtn"><i class="bi bi-plus-circle"></i> Nouvel Enregistrement</button>
+                                <button class="btn btn-outline-secondary" id="viewSuccessListBtn"><i class="bi bi-list-check"></i> Voir la liste des succès</button>
+                                <a href="academique.html" class="btn-home ms-2">
+                                    <i class="bi bi-house-door-fill"></i> Accueil
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Onglet Enregistrements Réussis -->
+            <div class="tab-pane fade" id="succes" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> Étudiants en ordre de paiement</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill"></i>
+                            Cette liste affiche les étudiants qui ont complété avec succès la vérification de leurs bordereaux.
+                        </div>
+                        
+                        <div class="search-export-bar">
+                            <div class="search-group">
+                                <label><i class="bi bi-search"></i> Rechercher un étudiant</label>
+                                <div class="search-input-group">
+                                    <i class="bi bi-search"></i>
+                                    <input type="text" class="form-control" id="searchRegisteredStudent" placeholder="Nom, matricule...">
+                                    <i class="bi bi-x-circle-fill clear-search" id="clearSearchRegistered" style="cursor:pointer;position:absolute;right:12px;top:50%;transform:translateY(-50%);display:none;"></i>
+                                </div>
+                            </div>
+                            <div class="export-group" style="display: flex; gap: 10px;">
+                                <button class="btn-print-all" id="printAllCartesBtn2" title="Imprimer toutes les cartes (6 par page)">
+                                    <i class="bi bi-printer-fill"></i> Imprimer toutes les cartes
+                                </button>
+                                <button class="btn-action" id="exportRegisteredExcel" style="background: #28a745;"><i class="bi bi-file-excel"></i> Excel</button>
+                                <button class="btn-action" id="exportRegisteredCsv"><i class="bi bi-file-text"></i> CSV</button>
+                            </div>
+                        </div>
+                        
+                        <div id="promotionButtonsRegistered" class="promotion-buttons"></div>
+                        
+                        <div class="table-responsive">
+                            <table class="registered-table" id="registeredStudentsTable">
+                                <thead>
+                                    <tr><th>N°</th><th>Matricule</th><th>Nom complet</th><th>Promotion</th><th>Semestre</th><th>Fiches vérifiées</th><th>Carte Accès</th><th>Date d'enregistrement</th></tr>
+                                </thead>
+                                <tbody id="registeredStudentsBody"><tr><td colspan="8" class="text-center">Chargement...</td></tr></tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <a href="academique.html" class="btn-home">
+                                <i class="bi bi-house-door-fill"></i> Retour à l'accueil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer no-print">
+        <div class="container">
+            <p class="mb-0">© 2024 HYBRILINK-TECH | Gestion des Paiements - Faculté Agronomique</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
+            authDomain: "fsa-unilu.firebaseapp.com",
+            projectId: "fsa-unilu",
+            storageBucket: "fsa-unilu.firebasestorage.app",
+            messagingSenderId: "36551990738",
+            appId: "1:36551990738:web:e91fdcb53f8aab5d1b7c0b"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        let allPromotions = [];
+        let allEtudiants = [];
+        let allFiches = [];
+        let semestreConfig = { premier: [], deuxieme: [] };
+        let currentSemestre = null;
+        let currentEtudiant = null;
+        let currentFiches = [];
+        let currentFichesFiltrees = [];
+        let registeredSuccessList = [];
+        let currentFilterPromotion = null;
+        let currentSearchRegistered = '';
+        let allCartesAcces = [];
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if(!container) return;
+            const bgColor = type === 'success' ? '#28a745' : (type === 'warning' ? '#ffc107' : '#dc3545');
+            const textColor = type === 'warning' ? '#333' : 'white';
+            const icon = type === 'success' ? 'check-circle-fill' : (type === 'warning' ? 'exclamation-triangle-fill' : 'x-circle-fill');
+            const toastHtml = `<div class="toast notification-toast" style="background: ${bgColor}; color: ${textColor}; border-radius: 10px; margin-bottom: 10px;"><div class="toast-body"><i class="bi bi-${icon} me-2"></i>${message}</div></div>`;
+            container.insertAdjacentHTML('afterbegin', toastHtml);
+            setTimeout(() => container.firstElementChild?.remove(), 4000);
+        }
+        
+        function escapeHtml(t) { 
+            if(!t) return ''; 
+            const d = document.createElement('div'); 
+            d.textContent = t; 
+            return d.innerHTML; 
+        }
+        
+        function formatDate(date) { 
+            if(!date) return '-'; 
+            try { 
+                if(date.toDate) date = date.toDate(); 
+                return date.toLocaleDateString('fr-FR'); 
+            } catch(e){ return '-'; } 
+        }
+        
+        function genererQRCodeReel(etudiantId, codeAcces, matricule, nom) {
+            const baseUrl = window.location.origin;
+            const validationUrl = `${baseUrl}/valider-carte.html?id=${encodeURIComponent(etudiantId)}&code=${encodeURIComponent(codeAcces)}&mat=${encodeURIComponent(matricule)}&nom=${encodeURIComponent(nom)}&ts=${Date.now()}`;
+            return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&margin=1&data=${encodeURIComponent(validationUrl)}`;
+        }
+        
+        function generateAccessCode(etudiantId, nomEtudiant) {
+            const premiereLettre = nomEtudiant ? nomEtudiant.charAt(0).toUpperCase() : 'X';
+            const chiffres = Math.floor(10000 + Math.random() * 90000).toString();
+            return `${chiffres}${premiereLettre}`;
+        }
+        
+        async function genererCarteAcces(etudiant, semestre, fichesValidees) {
+            const carteId = `${etudiant.id}_${semestre}_${Date.now()}`;
+            const dateExpiration = new Date();
+            dateExpiration.setMonth(dateExpiration.getMonth() + 6);
+            
+            const codeAcces = generateAccessCode(etudiant.id, etudiant.nom);
+            
+            const carteData = {
+                id: carteId,
+                etudiantId: etudiant.id,
+                etudiantNom: etudiant.nom,
+                matricule: etudiant.matricule || etudiant.id,
+                promotionId: etudiant.promotion,
+                promotionNom: etudiant.promotionNom,
+                semestre: semestre,
+                semestreNom: semestre === 'premier' ? 'Premier Semestre' : 'Deuxième Semestre',
+                fichesValidees: fichesValidees.map(f => ({ id: f.id, nom: f.nom, montant: f.montant })),
+                dateGeneration: firebase.firestore.FieldValue.serverTimestamp(),
+                dateExpiration: dateExpiration,
+                dateExpirationStr: dateExpiration.toLocaleDateString('fr-FR'),
+                actif: true,
+                codeAcces: codeAcces
+            };
+            
+            await db.collection('cartesAcces').doc(carteId).set(carteData);
+            return carteData;
+        }
+        
+        // ============ IMPRESSION EN MASSE (OUVRE UNE NOUVELLE FENÊTRE) ============
+        
+        async function chargerToutesLesCartes() {
+            try {
+                showToast('Chargement de toutes les cartes...', 'info');
+                const snapshot = await db.collection('cartesAcces')
+                    .where('actif', '==', true)
+                    .orderBy('etudiantNom')
+                    .get();
+                
+                allCartesAcces = [];
+                snapshot.forEach(doc => {
+                    allCartesAcces.push({ id: doc.id, ...doc.data() });
+                });
+                
+                if (allCartesAcces.length === 0) {
+                    showToast('Aucune carte d\'accès disponible', 'warning');
+                    return null;
+                }
+                
+                showToast(`${allCartesAcces.length} carte(s) chargée(s)`, 'success');
+                return allCartesAcces;
+            } catch(err) {
+                console.error('Erreur chargement cartes:', err);
+                showToast('Erreur lors du chargement des cartes', 'danger');
+                return null;
+            }
+        }
+        
+        function genererHTMLCarteImpression(carte) {
+            const estExpiree = carte.dateExpirationStr ? new Date(carte.dateExpirationStr.split('/').reverse().join('-')) < new Date() : false;
+            const qrUrl = genererQRCodeReel(carte.etudiantId, carte.codeAcces, carte.matricule, carte.etudiantNom);
+            const promotionNom = carte.promotionNom || (allPromotions.find(p => p.id === carte.promotionId)?.nom || '-');
+            
+            return `
+                <div class="print-carte">
+                    <div style="display:flex;flex-direction:row;background:#fdf8ed;min-height:250px;border-radius:8px;overflow:hidden;position:relative;border:1px solid #bf953f;font-family:'Times New Roman',serif;">
+                        <img src="ti.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30%;opacity:0.04;pointer-events:none;z-index:2;" onerror="this.style.display='none'">
+                        <div style="flex:1;padding:8px 6px;border-right:1px solid #e0cba0;background:linear-gradient(135deg,#fffef7 0%,#f5edd6 100%);position:relative;">
+                            <div style="font-size:0.55rem;font-weight:800;color:#003366;border-bottom:1px solid #bf953f;padding-bottom:2px;margin-bottom:6px;">📋 UNIVERSITÉ DE LUBUMBASHI</div>
+                            <ul style="list-style:none;padding-left:0;font-size:5.5px;line-height:1.3;margin-bottom:5px;">
+                                <li style="padding-left:10px;position:relative;margin-bottom:3px;"><span style="color:#bf953f;position:absolute;left:0;">✓</span><strong>Validité:</strong> Année académique</li>
+                                <li style="padding-left:10px;position:relative;margin-bottom:3px;"><span style="color:#bf953f;position:absolute;left:0;">✓</span><strong>Accès:</strong> labos, salles D'examen</li>
+                                <li style="padding-left:10px;position:relative;margin-bottom:3px;"><span style="color:#bf953f;position:absolute;left:0;">✓</span><strong>Renouvellement:</strong> Chaque semestre</li>
+                                <li style="padding-left:10px;position:relative;margin-bottom:3px;"><span style="color:#bf953f;position:absolute;left:0;">✓</span><strong>Contrôle:</strong> Scan QR temps réel</li>
+                                <li style="padding-left:10px;position:relative;margin-bottom:3px;"><span style="color:#bf953f;position:absolute;left:0;">✓</span><strong>Anti-fraude:</strong> Signature électronique</li>
+                            </ul>
+                            <div style="margin-top:6px;padding-top:5px;border-top:0.5px solid #bf953f;text-align:center;">
+                                <div style="font-size:0.4rem;">✍️</div>
+                                <div style="font-family:'Brush Script MT',cursive;font-size:7px;font-weight:bold;">Doyen Mpundu Mulimbi Michel.</div>
+                                <div style="width:60px;height:1px;background:#bf953f;margin:2px auto;"></div>
+                                <div style="font-size:4.5px;">DOYEN FSA - UNILU</div>
+                            </div>
+                            <div style="font-size:4px;color:#aaa;text-align:center;margin-top:5px;padding-top:3px;border-top:0.3px solid #eee;">🔒 HYBRILINK-TECH</div>
+                        </div>
+                        <div style="flex:1;padding:8px 6px;background:linear-gradient(135deg,#f8f6f0 0%,#e8e0cc 100%);position:relative;">
+                            <div style="position:absolute;top:3px;left:3px;right:3px;bottom:3px;border:0.5px solid #bf953f;pointer-events:none;border-radius:3px;"></div>
+                            <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px;border-bottom:0.5px solid #bf953f;padding-bottom:3px;">
+                                <div style="width:18px;height:18px;background:white;border-radius:30%;display:flex;align-items:center;justify-content:center;overflow:hidden;border:0.5px solid #bf953f;">🌾</div>
+                                <span style="font-size:0.5rem;font-weight:800;color:#003366;line-height:1.1;">UNIVERSITÉ DE LUBUMBASHI</span>
+                            </div>
+                            <div style="display:flex;gap:4px;align-items:flex-start;">
+                                <div style="width:50px;height:60px;border:1px solid #bf953f;background:#f5f0e0;display:flex;align-items:center;justify-content:center;border-radius:4px;position:relative;">
+                                    <span style="font-size:28px;">👨‍🎓</span>
+                                    <div style="position:absolute;bottom:-4px;right:-4px;width:32px;height:32px;background:linear-gradient(135deg,#e8e8e8,#c0c0c0,#f5f5f5,#a0a0a0,#e0e0e0,#c8c8c8);border-radius:50%;border:1.5px solid #bf953f;display:flex;align-items:center;justify-content:center;font-size:3.5px;font-weight:bold;text-align:center;line-height:1.1;padding:2px;font-family:Arial,sans-serif;color:#1a3a5c;text-transform:uppercase;">FACULTÉ<br>AGRONOMIQUE</div>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="font-size:5px;color:#777;">TITULAIRE</div>
+                                    <div style="font-size:9px;font-weight:bold;">${escapeHtml(carte.etudiantNom).toUpperCase()}</div>
+                                    <div style="font-size:6px;">${escapeHtml(promotionNom)}</div>
+                                    <div style="font-family:'Courier New',monospace;background:#003366;color:#bf953f;padding:1px 5px;font-weight:bold;display:inline-block;font-size:5.5px;border-radius:3px;margin-top:2px;">MAT: ${escapeHtml(carte.matricule)}</div>
+                                    <div style="font-size:5px;">N° ${escapeHtml(carte.codeAcces)}</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                                <div style="width:50px;height:50px;border:1px solid #003366;padding:2px;background:white;border-radius:4px;">
+                                    <img src="${qrUrl}" alt="QR" style="width:100%;height:100%;object-fit:contain;">
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:5px;background:#f0e8d5;padding:1px 3px;border-radius:8px;">${carte.semestreNom}</div>
+                                    <div style="font-size:5px;">Exp: ${carte.dateExpirationStr || '-'}</div>
+                                    <div style="display:inline-block;padding:1px 5px;border-radius:10px;font-size:5px;color:white;margin-top:2px;${estExpiree ? 'background:#dc3545;' : 'background:#28a745;'}">${estExpiree ? 'EXPIRÉE' : 'VALIDE'}</div>
+                                </div>
+                            </div>
+                            <div style="font-size:4px;color:#aaa;text-align:center;margin-top:4px;padding-top:3px;border-top:0.3px solid #eee;">CHECKSUM: ${carte.codeAcces?.substring(0,4) || 'FSA'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function imprimerToutesLesCartes() {
+            const btn = document.getElementById('printAllCartesBtn');
+            const btn2 = document.getElementById('printAllCartesBtn2');
+            
+            if (btn) btn.disabled = true;
+            if (btn2) btn2.disabled = true;
+            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Chargement...';
+            if (btn2) btn2.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Chargement...';
+            
+            const cartes = await chargerToutesLesCartes();
+            
+            if (!cartes || cartes.length === 0) {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-printer-fill"></i> 🖨️ Imprimer toutes les cartes'; }
+                if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="bi bi-printer-fill"></i> Imprimer toutes les cartes'; }
+                return;
+            }
+            
+            // ✅ OUVRIR UNE NOUVELLE FENÊTRE POUR L'IMPRESSION
+            const printWindow = window.open('', '_blank', 'width=1000,height=800');
+            
+            let pagesHTML = '';
+            
+            // Regrouper par pages de 6 cartes (grille 2x3)
+            for (let i = 0; i < cartes.length; i += 6) {
+                const pageCartes = cartes.slice(i, i + 6);
+                pagesHTML += '<div class="page">';
+                pagesHTML += '<div class="print-grid">';
+                
+                pageCartes.forEach(carte => {
+                    pagesHTML += genererHTMLCarteImpression(carte);
+                });
+                
+                // Remplir les emplacements vides si moins de 6 cartes sur la dernière page
+                const emptySlots = 6 - pageCartes.length;
+                for (let j = 0; j < emptySlots; j++) {
+                    pagesHTML += '<div class="print-carte" style="visibility:hidden;"></div>';
+                }
+                
+                pagesHTML += '</div></div>';
+            }
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="fr">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Impression des cartes d'accès - ${new Date().toLocaleDateString('fr-FR')}</title>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { 
+                            font-family: 'Times New Roman', serif; 
+                            background: white; 
+                        }
+                        
+                        .page {
+                            page-break-after: always;
+                            padding: 8mm;
+                        }
+                        .page:last-child {
+                            page-break-after: avoid;
+                        }
+                        
+                        .print-grid {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 8px;
+                        }
+                        
+                        .print-carte {
+                            border: 1px solid #bf953f;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            page-break-inside: avoid;
+                        }
+                        
+                        @media print {
+                            body { margin: 0; padding: 0; }
+                            .page { padding: 6mm; }
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color-adjust: exact !important;
+                            }
+                            @page { 
+                                size: A4; 
+                                margin: 6mm; 
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${pagesHTML}
+                    <script>
+                        // ✅ Imprimer automatiquement après chargement des images QR
+                        window.onload = function() {
+                            // Attendre un peu que les images QR se chargent
+                            setTimeout(function() {
+                                window.print();
+                                // Fermer la fenêtre après impression (ou après un délai)
+                                setTimeout(function() {
+                                    window.close();
+                                }, 1000);
+                            }, 1500);
+                        };
+                    <\\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            // Réactiver les boutons
+            setTimeout(() => {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-printer-fill"></i> 🖨️ Imprimer toutes les cartes'; }
+                if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="bi bi-printer-fill"></i> Imprimer toutes les cartes'; }
+            }, 2000);
+        }
+        
+        // ============ FONCTIONS EXISTANTES ============
+        
+        function afficherCarteDansModal(carte, etudiant) {
+            const promoNom = carte.promotionNom || etudiant.promotionNom;
+            const estExpiree = new Date(carte.dateExpirationStr) < new Date();
+            const qrUrl = genererQRCodeReel(carte.etudiantId || etudiant.id, carte.codeAcces, carte.matricule || etudiant.matricule, carte.etudiantNom || etudiant.nom);
+            
+            const modalHtml = `
+                <div id="carteDisplayModal" class="carte-modal">
+                    <button class="carte-modal-close" onclick="fermerModalCarte()">✕</button>
+                    <div class="carte-modal-content">
+                        <div class="carte-wrapper">
+                            <div class="livre-3d" id="modalLivre3d">
+                                <div class="cover-livre recto">
+                                    <div class="cover-card">
+                                        <div class="cover-logo-img"><img src="ti.png" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23bf953f%22/%3E%3Ctext x=%2250%22 y=%2265%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2230%22%3E🌾%3C/text%3E%3C/svg%3E'"></div>
+                                        <div class="cover-title">UNIVERSITÉ DE LUBUMBASHI</div>
+                                        <div class="cover-subtitle">Faculté des Sciences Agronomiques</div>
+                                        <div style="color:white; font-size:1rem; margin-top:10px;">CARTE D'ACCÈS</div>
+                                        <div class="cover-footer"><i class="bi bi-gem"></i> Sceau rotatif</div>
+                                        <div class="instruction-text">👆 Cliquez pour ouvrir</div>
+                                    </div>
+                                </div>
+                                <div class="cover-livre verso">
+                                    <div class="livre-contenu">
+                                        <img src="ti.png" class="watermark-centre" onerror="this.style.display='none'">
+                                        <div class="page-livre page-gauche">
+                                            <div class="page-titre"><i class="bi bi-info-circle-fill me-1"></i> À SUIVRE</div>
+                                            <ul class="info-list">
+                                                <li><strong>Validité:</strong> Année académique</li><li><strong>Accès:</strong> labos, salles D'examen</li>
+                                                <li><strong>Renouvellement:</strong> Chaque semestre</li>
+                                                <li><strong>Contrôle:</strong> Scan QR temps réel</li><li><strong>Anti-fraude:</strong> Signature électronique</li>
+                                            </ul>
+                                            <div class="signature-officielle-page">
+                                                <div><i class="bi bi-pen-fill" style="color: var(--gold);"></i></div>
+                                                <div class="signature-decanat-page">Doyen Mpundu Mulimbi Michel.</div>
+                                                <div class="signature-ligne-page"></div>
+                                                <div class="titre-doyen">DOYEN FSA - UNILU</div>
+                                            </div>
+                                            <div class="micro-text-page"><i class="bi bi-shield-check"></i> HYBRILINK-TECH</div>
+                                        </div>
+                                        <div class="page-livre page-droite">
+                                            <div class="border-frame-page"></div>
+                                            <div class="entete-univ">
+                                                <div class="mini-logo-univ"><img src="ti.png" alt="logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2218%22 fill=%22%23bf953f%22/%3E%3Ctext x=%2220%22 y=%2228%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2214%22%3E🌾%3C/text%3E%3C/svg%3E'"></div>
+                                                <span class="titre-avec-logo">UNIVERSITÉ DE LUBUMBASHI</span>
+                                            </div>
+                                            <div class="d-flex gap-2 flex-wrap align-start">
+                                                <div class="photo-container-page">
+                                                    <div class="photo-placeholder">👨‍🎓</div>
+                                                    <div class="scellement-argent-page" title="Sceau officiel">FACULTÉ<br>AGRONOMIQUE</div>
+                                                </div>
+                                                <div style="flex:1">
+                                                    <div style="font-size:8px; color:#777;">TITULAIRE</div>
+                                                    <div style="font-size:12px; font-weight:bold;">${escapeHtml(carte.etudiantNom || etudiant.nom).toUpperCase()}</div>
+                                                    <div style="font-size:9px;">${escapeHtml(promoNom)}</div>
+                                                    <div class="id-number-page mt-1">MAT: ${escapeHtml(carte.matricule || etudiant.matricule)}</div>
+                                                    <div style="font-size:8px;">N° ${escapeHtml(carte.codeAcces)}</div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                                <div class="qr-wrapper-page"><img src="${qrUrl}" alt="QR"></div>
+                                                <div class="text-end">
+                                                    <div style="font-size:7px; background:#f0e8d5; padding:2px 5px; border-radius:12px;">${carte.semestreNom}</div>
+                                                    <div style="font-size:7px;">Exp: ${carte.dateExpirationStr || '-'}</div>
+                                                    <div class="mt-1 ${estExpiree ? 'status-expired-page' : 'status-valid-page'}">${estExpiree ? 'EXPIRÉE' : 'VALIDE'}</div>
+                                                </div>
+                                            </div>
+                                            <div class="micro-text-page mt-1">CHECKSUM: ${carte.codeAcces?.substring(0,4) || 'FSA'} • Q/R dynamique</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary" onclick="imprimerCarteDepuisModal()"><i class="bi bi-printer"></i> Imprimer la carte</button>
+                            <button class="btn btn-secondary" onclick="fermerModalCarte()">Fermer</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            const livre3d = document.getElementById('modalLivre3d');
+            if(livre3d) {
+                livre3d.addEventListener('click', function(e) {
+                    if(e.target.closest('.qr-wrapper-page')) return;
+                    this.classList.toggle('ouvert');
+                });
+            }
+            
+            window.carteDataForPrint = carte;
+            window.etudiantDataForPrint = etudiant;
+        }
+        
+        function fermerModalCarte() {
+            document.getElementById('carteDisplayModal')?.remove();
+        }
+        
+        function imprimerCarteDepuisModal() {
+            const carte = window.carteDataForPrint;
+            const etudiant = window.etudiantDataForPrint;
+            if(!carte) return;
+            
+            const promoNom = carte.promotionNom || etudiant.promotionNom;
+            const estExpiree = new Date(carte.dateExpirationStr) < new Date();
+            const qrUrl = genererQRCodeReel(carte.etudiantId || etudiant.id, carte.codeAcces, carte.matricule || etudiant.matricule, carte.etudiantNom || etudiant.nom);
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html><html><head><title>Carte</title><meta charset="UTF-8">
+                <style>
+                    *{margin:0;padding:0;box-sizing:border-box}
+                    body{font-family:'Times New Roman',serif;background:white;display:flex;justify-content:center;align-items:center;min-height:100vh}
+                    .carte-wrapper{max-width:680px;margin:20px}
+                    .livre-contenu{display:flex;flex-direction:row;background:#fdf8ed;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.2);overflow:hidden;min-height:380px;position:relative}
+                    .page-livre{flex:1;padding:14px 12px;position:relative}
+                    .page-gauche{border-right:1px solid #e0cba0;background:linear-gradient(135deg,#fffef7 0%,#f5edd6 100%)}
+                    .page-droite{background:linear-gradient(135deg,#f8f6f0 0%,#e8e0cc 100%);position:relative}
+                    .livre-contenu::before{content:'';position:absolute;top:0;left:50%;width:2px;height:100%;background:linear-gradient(to bottom,#bf953f,#fcf6ba,#bf953f);transform:translateX(-50%);z-index:5}
+                    .border-frame-page{position:absolute;top:4px;left:4px;right:4px;bottom:4px;border:1px solid #bf953f;pointer-events:none;border-radius:5px}
+                    .page-titre{font-size:.8rem;font-weight:800;color:#003366;border-bottom:1.5px solid #bf953f;padding-bottom:4px;margin-bottom:10px;display:inline-block}
+                    .info-list{list-style:none;padding-left:0;font-size:8px;line-height:1.45;margin-bottom:8px}
+                    .info-list li{padding-left:14px;position:relative;margin-bottom:5px}
+                    .info-list li:before{content:"✓";position:absolute;left:0;color:#bf953f;font-size:7px}
+                    .signature-officielle-page{margin-top:10px;padding-top:8px;border-top:1px solid #bf953f;text-align:center}
+                    .signature-decanat-page{font-family:'Brush Script MT',cursive;font-size:11px;font-weight:bold}
+                    .signature-ligne-page{width:90px;height:1.5px;background:#bf953f;margin:4px auto}
+                    .titre-doyen{font-size:6.5px}
+                    .micro-text-page{font-size:5.5px;color:#aaa;text-align:center;margin-top:8px;padding-top:4px;border-top:.5px solid #eee}
+                    .entete-univ{display:flex;align-items:center;gap:6px;margin-bottom:8px;border-bottom:1px solid #bf953f;padding-bottom:5px}
+                    .mini-logo-univ{width:26px;height:26px;background:white;border-radius:30%;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #bf953f}
+                    .titre-avec-logo{font-size:.7rem;font-weight:800;color:#003366;line-height:1.2}
+                    .photo-container-page{width:75px;height:90px;border:1.5px solid #bf953f;background:#f5f0e0;display:flex;align-items:center;justify-content:center;border-radius:6px;position:relative}
+                    .photo-placeholder{font-size:42px;color:#bbb}
+                    .scellement-argent-page{position:absolute;bottom:-6px;right:-6px;width:52px;height:52px;background:linear-gradient(135deg,#e8e8e8,#c0c0c0,#f5f5f5,#a0a0a0,#e0e0e0,#c8c8c8);border-radius:50%;border:2px solid #bf953f;display:flex;align-items:center;justify-content:center;font-size:5.5px;font-weight:bold;text-align:center;line-height:1.2;padding:4px;font-family:Arial,sans-serif;color:#1a3a5c;text-transform:uppercase}
+                    .id-number-page{font-family:'Courier New',monospace;background:#003366;color:#bf953f;padding:2px 8px;font-weight:bold;display:inline-block;font-size:8px;border-radius:4px}
+                    .qr-wrapper-page{width:75px;height:75px;border:1.5px solid #003366;padding:4px;background:white;border-radius:8px}
+                    .qr-wrapper-page img{width:100%;height:100%;object-fit:contain}
+                    .status-valid-page{background:#28a745;color:white;padding:2px 8px;border-radius:15px;font-size:7.5px;display:inline-block}
+                    .status-expired-page{background:#dc3545;color:white;padding:2px 8px;border-radius:15px;font-size:7.5px;display:inline-block}
+                    @media print{body{margin:0;padding:0}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}@page{size:auto;margin:0mm}}
+                </style></head>
+                <body>
+                    <div class="carte-wrapper"><div class="livre-contenu">
+                        <div class="page-livre page-gauche">
+                            <div class="page-titre">📋 UNIVERSITE DE LUBUMBASHI</div>
+                            <ul class="info-list"><li><strong>Validité:</strong> Année académique</li><li><strong>Accès:</strong> labos, salles D'examen</li><li><strong>Renouvellement:</strong> Chaque semestre</li><li><strong>Contrôle:</strong> Scan QR temps réel</li><li><strong>Anti-fraude:</strong> Signature électronique</li></ul>
+                            <div class="signature-officielle-page"><div>✍️</div><div class="signature-decanat-page">Doyen Mpundu Mulimbi Michel.</div><div class="signature-ligne-page"></div><div class="titre-doyen">DOYEN FSA - UNILU</div></div>
+                            <div class="micro-text-page">🔒 HYBRILINK-TECH</div>
+                        </div>
+                        <div class="page-livre page-droite">
+                            <div class="border-frame-page"></div>
+                            <div class="entete-univ"><div class="mini-logo-univ">🌾</div><span class="titre-avec-logo">FACULTE DES SCINCES AGRONOMIQUES</span></div>
+                            <div class="d-flex gap-2 flex-wrap align-start">
+                                <div class="photo-container-page"><div class="photo-placeholder">👨‍🎓</div><div class="scellement-argent-page">FACULTÉ<br>AGRONOMIQUE</div></div>
+                                <div style="flex:1"><div style="font-size:8px;color:#777;">TITULAIRE</div><div style="font-size:12px;font-weight:bold;">${escapeHtml(carte.etudiantNom || etudiant.nom).toUpperCase()}</div><div style="font-size:9px;">${escapeHtml(promoNom)}</div><div class="id-number-page mt-1">MAT: ${escapeHtml(carte.matricule || etudiant.matricule)}</div><div style="font-size:8px;">N° ${escapeHtml(carte.codeAcces)}</div></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="qr-wrapper-page"><img src="${qrUrl}" alt="QR"></div>
+                                <div class="text-end"><div style="font-size:7px;background:#f0e8d5;padding:2px 5px;border-radius:12px;">${carte.semestreNom}</div><div style="font-size:7px;">Exp: ${carte.dateExpirationStr || '-'}</div><div class="mt-1 ${estExpiree ? 'status-expired-page' : 'status-valid-page'}">${estExpiree ? 'EXPIRÉE' : 'VALIDE'}</div></div>
+                            </div>
+                            <div class="micro-text-page mt-1">CHECKSUM: ${carte.codeAcces?.substring(0,4) || 'FSA'}</div>
+                        </div>
+                    </div></div>
+                    <script>window.onload=function(){window.print();setTimeout(function(){window.close();},800)};<\\/script>
+                </body></html>
+            `);
+            printWindow.document.close();
+            fermerModalCarte();
+        }
+        
+        async function voirCarteAcces(etudiantId, semestre) {
+            try {
+                showToast('Chargement de la carte...', 'info');
+                const cartesSnap = await db.collection('cartesAcces')
+                    .where('etudiantId', '==', etudiantId)
+                    .where('semestre', '==', semestre)
+                    .get();
+                
+                if(cartesSnap.empty) {
+                    showToast('Aucune carte trouvée pour cet étudiant', 'warning');
+                    return;
+                }
+                
+                const carteDoc = cartesSnap.docs[0];
+                const carte = { id: carteDoc.id, ...carteDoc.data() };
+                const etudiant = allEtudiants.find(e => e.id === etudiantId);
+                
+                if(etudiant) {
+                    etudiant.promotionNom = allPromotions.find(p => p.id === etudiant.promotion)?.nom || '-';
+                }
+                
+                afficherCarteDansModal(carte, etudiant || { id: etudiantId, nom: carte.etudiantNom, matricule: carte.matricule, promotionNom: carte.promotionNom });
+                
+            } catch(err) {
+                console.error(err);
+                showToast('Erreur lors du chargement de la carte', 'danger');
+            }
+        }
+        
+        async function enregistrerSucces(fichesValidees) {
+            try {
+                const successData = {
+                    etudiantId: currentEtudiant.id,
+                    etudiantNom: currentEtudiant.nom,
+                    matricule: currentEtudiant.matricule || currentEtudiant.id,
+                    promotionId: currentEtudiant.promotion,
+                    promotionNom: currentEtudiant.promotionNom,
+                    semestre: currentSemestre,
+                    fichesValidees: fichesValidees.map(f => ({ id: f.id, nom: f.nom, montant: f.montant })),
+                    dateEnregistrement: firebase.firestore.FieldValue.serverTimestamp(),
+                    enregistrePar: 'Agent Paiement'
+                };
+                
+                await db.collection('paiementsSuccess').add(successData);
+                await genererCarteAcces(currentEtudiant, currentSemestre, fichesValidees);
+                
+                const finalDiv = document.getElementById('finalResult');
+                finalDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill" style="font-size: 48px;"></i>
+                        <h4 class="mt-2">Enregistrement réussi !</h4>
+                        <p>L'étudiant <strong>${escapeHtml(currentEtudiant.nom)}</strong> (${escapeHtml(currentEtudiant.matricule || currentEtudiant.id)})</p>
+                        <p>est maintenant en ordre pour le <strong>${currentSemestre === 'premier' ? 'premier semestre' : 'deuxième semestre'}</strong>.</p>
+                        <hr>
+                        <p class="mb-0">Fiches vérifiées: ${fichesValidees.map(f => f.nom).join(', ')}</p>
+                        <p class="mt-2 text-muted small">La carte d'accès a été générée et est disponible dans l'espace étudiant.</p>
+                    </div>
+                `;
+                
+                await loadRegisteredSuccessList();
+                
+                document.querySelectorAll('.step-container').forEach(step => step.classList.remove('active'));
+                document.getElementById('stepFinal').classList.add('active');
+                
+                showToast('Étudiant enregistré avec succès!', 'success');
+                
+            } catch(err) {
+                console.error(err);
+                showToast('Erreur lors de l\'enregistrement', 'danger');
+            }
+        }
+        
+        async function loadData() {
+            try {
+                const promotionsSnap = await db.collection('promotions').get();
+                allPromotions = [];
+                promotionsSnap.forEach(doc => allPromotions.push({ id: doc.id, ...doc.data() }));
+                
+                const etudiantsSnap = await db.collection('etudiants').get();
+                allEtudiants = [];
+                etudiantsSnap.forEach(doc => allEtudiants.push({ id: doc.id, ...doc.data() }));
+                
+                const fichesSnap = await db.collection('fiches').get();
+                allFiches = [];
+                fichesSnap.forEach(doc => allFiches.push({ id: doc.id, ...doc.data() }));
+                
+                const configDoc = await db.collection('configurations').doc('semestres').get();
+                if(configDoc.exists) semestreConfig = configDoc.data();
+                
+                await loadRegisteredSuccessList();
+                
+                updateSemestreFichesList();
+                updatePromotionFilter();
+                displayRegisteredStudents();
+                
+                showToast('Données chargées avec succès', 'success');
+                
+            } catch(err) {
+                console.error('Erreur chargement données:', err);
+                showToast('Erreur de chargement des données.', 'danger');
+            }
+        }
+        
+        function updateSemestreFichesList() {
+            const premierFiches = (semestreConfig.premier || []).map(id => {
+                const fiche = allFiches.find(f => f.id === id);
+                return fiche ? fiche.nom : null;
+            }).filter(f => f);
+            
+            const deuxiemeFiches = (semestreConfig.deuxieme || []).map(id => {
+                const fiche = allFiches.find(f => f.id === id);
+                return fiche ? fiche.nom : null;
+            }).filter(f => f);
+            
+            const premierElem = document.getElementById('premierSemestreFichesListe');
+            const deuxiemeElem = document.getElementById('deuxiemeSemestreFichesListe');
+            
+            if(premierElem) {
+                premierElem.innerHTML = premierFiches.length > 0 ? 
+                    `<small>Fiches: ${premierFiches.join(', ')}</small>` : 
+                    '<small class="text-warning">Aucune fiche configurée</small>';
+            }
+            
+            if(deuxiemeElem) {
+                deuxiemeElem.innerHTML = deuxiemeFiches.length > 0 ? 
+                    `<small>Fiches: ${deuxiemeFiches.join(', ')}</small>` : 
+                    '<small class="text-warning">Aucune fiche configurée</small>';
+            }
+        }
+        
+        async function loadRegisteredSuccessList() {
+            try {
+                const snapshot = await db.collection('paiementsSuccess').orderBy('dateEnregistrement', 'desc').get();
+                registeredSuccessList = [];
+                snapshot.forEach(doc => registeredSuccessList.push({ id: doc.id, ...doc.data() }));
+                displayRegisteredStudents();
+            } catch(err) {
+                console.error('Erreur chargement liste succès:', err);
+            }
+        }
+        
+        function updatePromotionFilter() {
+            const container = document.getElementById('promotionButtonsRegistered');
+            if(container) {
+                let html = '<button class="promotion-btn active" data-promo="all">📋 Toutes</button>';
+                allPromotions.forEach(p => {
+                    html += `<button class="promotion-btn" data-promo="${p.id}">📚 ${escapeHtml(p.nom)}</button>`;
+                });
+                container.innerHTML = html;
+                
+                container.querySelectorAll('.promotion-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        container.querySelectorAll('.promotion-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentFilterPromotion = btn.dataset.promo === 'all' ? null : btn.dataset.promo;
+                        displayRegisteredStudents();
+                    });
+                });
+            }
+        }
+        
+        function getCarteDisplayHtml(successItem) {
+            return `<button class="btn btn-sm btn-primary" onclick="voirCarteAcces('${successItem.etudiantId}', '${successItem.semestre}')" style="background: #003366; border: none; padding: 5px 12px; border-radius: 8px;"><i class="bi bi-card-list"></i> Voir Carte</button>`;
+        }
+        
+        function displayRegisteredStudents() {
+            const tbody = document.getElementById('registeredStudentsBody');
+            if(!tbody) return;
+            
+            let filtres = [...registeredSuccessList];
+            
+            if(currentFilterPromotion) {
+                filtres = filtres.filter(r => r.promotionId === currentFilterPromotion);
+            }
+            
+            if(currentSearchRegistered) {
+                const search = currentSearchRegistered.toLowerCase();
+                filtres = filtres.filter(r => 
+                    (r.etudiantNom || '').toLowerCase().includes(search) || 
+                    (r.matricule || '').toLowerCase().includes(search)
+                );
+            }
+            
+            if(filtres.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">Aucun enregistrement trouvé</td></tr>';
+                return;
+            }
+            
+            const promoMap = {};
+            allPromotions.forEach(p => promoMap[p.id] = p.nom);
+            
+            let html = '';
+            filtres.forEach((r, idx) => {
+                const fichesNoms = r.fichesValidees ? r.fichesValidees.map(f => f.nom).join(', ') : '-';
+                const dateStr = r.dateEnregistrement?.toDate ? 
+                    new Date(r.dateEnregistrement.toDate()).toLocaleString('fr-FR') : 
+                    new Date(r.dateEnregistrement).toLocaleString('fr-FR');
+                
+                html += `<tr>
+                    <td>${idx+1}</td>
+                    <td><code>${escapeHtml(r.matricule || '-')}</code></td>
+                    <td><strong>${escapeHtml(r.etudiantNom)}</strong></td>
+                    <td>${escapeHtml(promoMap[r.promotionId] || '-')}</td>
+                    <td><span class="badge ${r.semestre === 'premier' ? 'badge-premier' : 'badge-deuxieme'}">${r.semestre === 'premier' ? '1er Semestre' : '2ème Semestre'}</span></td>
+                    <td><small>${escapeHtml(fichesNoms)}</small></td>
+                    <td>${getCarteDisplayHtml(r)}</td>
+                    <td><small>${dateStr}</small></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+        
+        function goToStep2() {
+            currentEtudiant = null;
+            document.querySelectorAll('.step-container').forEach(step => step.classList.remove('active'));
+            document.getElementById('step2').classList.add('active');
+            
+            document.getElementById('uniqueBordereauInput').value = '';
+            document.getElementById('uniqueBordereauResult').style.display = 'none';
+            document.getElementById('studentInfoContainer').style.display = 'none';
+            document.getElementById('missingFichesContainer').style.display = 'none';
+            document.getElementById('directValidateBtn').style.display = 'none';
+            document.getElementById('continueMissingBtn').style.display = 'none';
+            
+            const container = document.getElementById('stepIndicator');
+            container.innerHTML = '<div class="step active">1<div class="step-label">Semestre</div></div><div class="step-line"></div><div class="step">2<div class="step-label">Bordereau</div></div>';
+        }
+        
+        function goToStep3() {
+            const container = document.getElementById('stepIndicator');
+            container.innerHTML = '<div class="step completed">1<div class="step-label">Semestre</div></div><div class="step-line"></div><div class="step active">2<div class="step-label">Bordereau</div></div><div class="step-line"></div><div class="step">3<div class="step-label">Fiches manquantes</div></div>';
+            
+            document.querySelectorAll('.step-container').forEach(step => step.classList.remove('active'));
+            document.getElementById('step3').classList.add('active');
+            
+            const studentContainer = document.getElementById('studentInfoStep3');
+            studentContainer.style.display = 'block';
+            studentContainer.innerHTML = `
+                <div style="background:linear-gradient(135deg,#003366,#002244);color:white;border-radius:15px;padding:15px 20px;margin-bottom:20px;">
+                    <div class="row">
+                        <div class="col-md-6"><strong>👤 Étudiant:</strong> ${escapeHtml(currentEtudiant.nom)}<br><strong>📋 Matricule:</strong> ${escapeHtml(currentEtudiant.matricule || currentEtudiant.id)}</div>
+                        <div class="col-md-6"><strong>🏆 Promotion:</strong> ${escapeHtml(currentEtudiant.promotionNom)}<br><strong>📅 Semestre:</strong> ${currentSemestre === 'premier' ? 'Premier' : 'Deuxième'}</div>
+                    </div>
+                </div>`;
+            
+            const containerMissing = document.getElementById('missingBordereauxContainer');
+            let html = '';
+            const missingFiches = window.missingFiches || [];
+            window.missingValues = missingFiches.map(() => ({ value: '', verified: false, transaction: null }));
+            
+            missingFiches.forEach((fiche, index) => {
+                html += `
+                    <div class="bordereau-input-group" style="margin-bottom:20px;">
+                        <h5>📄 Fiche: ${escapeHtml(fiche.nom)}</h5>
+                        <p class="text-muted">Montant: ${(fiche.montant || 0).toLocaleString()} FC</p>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">🔍</span>
+                            <input type="text" class="form-control" id="missingInput${index}" placeholder="Numéro du bordereau/reçu">
+                            <button class="btn btn-warning-custom" id="missingVerifyBtn${index}">✅ Vérifier</button>
+                        </div>
+                        <div id="missingResult${index}" class="bordereau-card" style="display:none;"></div>
+                    </div>`;
+            });
+            containerMissing.innerHTML = html;
+            
+            missingFiches.forEach((fiche, index) => {
+                const verifyBtn = document.getElementById(`missingVerifyBtn${index}`);
+                const input = document.getElementById(`missingInput${index}`);
+                const resultDiv = document.getElementById(`missingResult${index}`);
+                
+                verifyBtn?.addEventListener('click', async () => {
+                    const numero = input.value.trim();
+                    if(!numero) { showToast('Veuillez entrer un numéro', 'warning'); return; }
+                    
+                    verifyBtn.disabled = true;
+                    verifyBtn.innerHTML = '<div class="loading-spinner"></div> Vérification...';
+                    
+                    try {
+                        const transactionQuery = await db.collection('transactions').where('numeroRecu', '==', numero).get();
+                        
+                        if(transactionQuery.empty) {
+                            resultDiv.style.display = 'block';
+                            resultDiv.className = 'bordereau-card bordereau-invalid';
+                            resultDiv.innerHTML = '❌ Bordereau non trouvé!';
+                            window.missingValues[index] = { value: numero, verified: false, transaction: null };
+                        } else {
+                            const transData = transactionQuery.docs[0].data();
+                            
+                            if(transData.etudiantId !== currentEtudiant.id && transData.etudiantId !== currentEtudiant.matricule) {
+                                resultDiv.style.display = 'block';
+                                resultDiv.className = 'bordereau-card bordereau-invalid';
+                                resultDiv.innerHTML = '❌ Bordereau d\'un autre étudiant!';
+                                window.missingValues[index] = { value: numero, verified: false, transaction: null };
+                            } else {
+                                const fichesPayees = transData.fiches || [];
+                                const fichePayee = fichesPayees.find(f => f.id === fiche.id);
+                                
+                                if(!fichePayee) {
+                                    resultDiv.style.display = 'block';
+                                    resultDiv.className = 'bordereau-card bordereau-invalid';
+                                    resultDiv.innerHTML = `❌ Fiche "${escapeHtml(fiche.nom)}" non trouvée!`;
+                                    window.missingValues[index] = { value: numero, verified: false, transaction: null };
+                                } else {
+                                    resultDiv.style.display = 'block';
+                                    resultDiv.className = 'bordereau-card bordereau-valid';
+                                    resultDiv.innerHTML = `✅ Bordereau valide! Fiche "${escapeHtml(fiche.nom)}" payée.`;
+                                    window.missingValues[index] = { value: numero, verified: true, transaction: transData };
+                                }
+                            }
+                        }
+                        
+                        document.getElementById('validateMissingBtn').style.display = 
+                            window.missingValues.every(v => v.verified) ? 'inline-block' : 'none';
+                        
+                    } catch(err) {
+                        console.error(err);
+                        showToast('Erreur lors de la vérification', 'danger');
+                    } finally {
+                        verifyBtn.disabled = false;
+                        verifyBtn.innerHTML = '✅ Vérifier';
+                    }
+                });
+            });
+            
+            document.getElementById('validateMissingBtn').style.display = 'none';
+        }
+        
+        function initEventListeners() {
+            document.getElementById('selectPremierSemestre')?.addEventListener('click', () => {
+                const fiches = semestreConfig.premier || [];
+                if(fiches.length === 0) { showToast('Aucune fiche configurée.', 'warning'); return; }
+                currentSemestre = 'premier';
+                currentFiches = fiches.map(id => allFiches.find(f => f.id === id)).filter(f => f);
+                goToStep2();
+            });
+            
+            document.getElementById('selectDeuxiemeSemestre')?.addEventListener('click', () => {
+                const fiches = semestreConfig.deuxieme || [];
+                if(fiches.length === 0) { showToast('Aucune fiche configurée.', 'warning'); return; }
+                currentSemestre = 'deuxieme';
+                currentFiches = fiches.map(id => allFiches.find(f => f.id === id)).filter(f => f);
+                goToStep2();
+            });
+            
+            document.getElementById('verifyUniqueBordereauBtn')?.addEventListener('click', async () => {
+                const numero = document.getElementById('uniqueBordereauInput').value.trim();
+                if(!numero) { showToast('Veuillez entrer un numéro', 'warning'); return; }
+                
+                const btn = document.getElementById('verifyUniqueBordereauBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<div class="loading-spinner"></div> Vérification...';
+                
+                try {
+                    const transactionQuery = await db.collection('transactions').where('numeroRecu', '==', numero).get();
+                    const resultDiv = document.getElementById('uniqueBordereauResult');
+                    
+                    if(transactionQuery.empty) {
+                        resultDiv.style.display = 'block';
+                        resultDiv.className = 'bordereau-card bordereau-invalid';
+                        resultDiv.innerHTML = '❌ Bordereau invalide!';
+                        btn.disabled = false;
+                        btn.innerHTML = '✅ Vérifier';
+                        return;
+                    }
+                    
+                    const transData = transactionQuery.docs[0].data();
+                    const etudiant = allEtudiants.find(e => e.id === transData.etudiantId || e.matricule === transData.etudiantId);
+                    
+                    if(!etudiant) {
+                        resultDiv.style.display = 'block';
+                        resultDiv.className = 'bordereau-card bordereau-invalid';
+                        resultDiv.innerHTML = '❌ Étudiant non trouvé!';
+                        btn.disabled = false;
+                        btn.innerHTML = '✅ Vérifier';
+                        return;
+                    }
+                    
+                    if(registeredSuccessList.find(r => (r.matricule === (etudiant.matricule || etudiant.id)) && r.semestre === currentSemestre)) {
+                        resultDiv.style.display = 'block';
+                        resultDiv.className = 'bordereau-card bordereau-invalid';
+                        resultDiv.innerHTML = '❌ Déjà enregistré!';
+                        btn.disabled = false;
+                        btn.innerHTML = '✅ Vérifier';
+                        return;
+                    }
+                    
+                    currentEtudiant = etudiant;
+                    currentEtudiant.promotionNom = allPromotions.find(p => p.id === etudiant.promotion)?.nom || '-';
+                    
+                    currentFichesFiltrees = currentFiches.filter(fiche => {
+                        const promos = fiche.promotions || (fiche.promotion ? [fiche.promotion] : []);
+                        return promos.includes(etudiant.promotion);
+                    });
+                    
+                    const fichesPayeesIds = (transData.fiches || []).map(f => f.id);
+                    const fichesManquantes = currentFichesFiltrees.filter(f => !fichesPayeesIds.includes(f.id));
+                    
+                    document.getElementById('studentInfoContainer').style.display = 'block';
+                    document.getElementById('studentInfoContainer').innerHTML = `
+                        <div style="background:linear-gradient(135deg,#003366,#002244);color:white;border-radius:15px;padding:15px 20px;margin-bottom:20px;">
+                            <div class="row">
+                                <div class="col-md-6"><strong>👤</strong> ${escapeHtml(etudiant.nom)}<br><strong>📋</strong> ${escapeHtml(etudiant.matricule || etudiant.id)}</div>
+                                <div class="col-md-6"><strong>🏆</strong> ${escapeHtml(currentEtudiant.promotionNom)}<br><strong>📅</strong> ${currentSemestre === 'premier' ? 'Premier' : 'Deuxième'}</div>
+                            </div>
+                        </div>`;
+                    
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'bordereau-card bordereau-valid';
+                    
+                    if(fichesManquantes.length === 0) {
+                        resultDiv.innerHTML = '✅ Toutes les fiches sont payées!';
+                        document.getElementById('directValidateBtn').style.display = 'inline-block';
+                        document.getElementById('continueMissingBtn').style.display = 'none';
+                    } else {
+                        resultDiv.innerHTML = `✅ Bordereau valide! ⚠️ Fiches manquantes: ${fichesManquantes.map(f => f.nom).join(', ')}`;
+                        window.missingFiches = fichesManquantes;
+                        document.getElementById('directValidateBtn').style.display = 'none';
+                        document.getElementById('continueMissingBtn').style.display = 'inline-block';
+                    }
+                    
+                } catch(err) {
+                    console.error(err);
+                    showToast('Erreur lors de la vérification', 'danger');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '✅ Vérifier';
+                }
+            });
+            
+            document.getElementById('directValidateBtn')?.addEventListener('click', async () => await enregistrerSucces(currentFichesFiltrees));
+            document.getElementById('continueMissingBtn')?.addEventListener('click', () => goToStep3());
+            document.getElementById('validateMissingBtn')?.addEventListener('click', async () => await enregistrerSucces(currentFichesFiltrees));
+            document.getElementById('resetStep2Btn')?.addEventListener('click', () => goToStep2());
+            document.getElementById('resetStep3Btn')?.addEventListener('click', () => goToStep2());
+            
+            document.getElementById('newRegistrationBtn')?.addEventListener('click', () => {
+                document.querySelectorAll('.step-container').forEach(s => s.classList.remove('active'));
+                document.getElementById('step1').classList.add('active');
+                document.getElementById('stepIndicator').innerHTML = '';
+                currentSemestre = null;
+                currentEtudiant = null;
+            });
+            
+            document.getElementById('viewSuccessListBtn')?.addEventListener('click', () => {
+                new bootstrap.Tab(document.getElementById('succes-tab')).show();
+            });
+            
+            document.getElementById('searchRegisteredStudent')?.addEventListener('input', (e) => {
+                currentSearchRegistered = e.target.value;
+                document.getElementById('clearSearchRegistered').style.display = currentSearchRegistered ? 'block' : 'none';
+                displayRegisteredStudents();
+            });
+            
+            document.getElementById('clearSearchRegistered')?.addEventListener('click', () => {
+                document.getElementById('searchRegisteredStudent').value = '';
+                currentSearchRegistered = '';
+                document.getElementById('clearSearchRegistered').style.display = 'none';
+                displayRegisteredStudents();
+            });
+            
+            // ✅ BOUTONS D'IMPRESSION EN MASSE
+            document.getElementById('printAllCartesBtn')?.addEventListener('click', imprimerToutesLesCartes);
+            document.getElementById('printAllCartesBtn2')?.addEventListener('click', imprimerToutesLesCartes);
+            
+            document.getElementById('exportRegisteredExcel')?.addEventListener('click', () => {
+                const promoMap = {};
+                allPromotions.forEach(p => promoMap[p.id] = p.nom);
+                const data = registeredSuccessList.map(r => ({
+                    'Matricule': r.matricule,
+                    'Nom complet': r.etudiantNom,
+                    'Promotion': promoMap[r.promotionId] || '-',
+                    'Semestre': r.semestre === 'premier' ? 'Premier' : 'Deuxième',
+                    'Fiches vérifiées': (r.fichesValidees || []).map(f => f.nom).join(', '),
+                    'Date': r.dateEnregistrement?.toDate ? new Date(r.dateEnregistrement.toDate()).toLocaleString('fr-FR') : new Date(r.dateEnregistrement).toLocaleString('fr-FR')
+                }));
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Enregistrements');
+                XLSX.writeFile(wb, `enregistrements_${new Date().toISOString().slice(0,10)}.xlsx`);
+                showToast('Export Excel généré', 'success');
+            });
+            
+            document.getElementById('exportRegisteredCsv')?.addEventListener('click', () => {
+                const promoMap = {};
+                allPromotions.forEach(p => promoMap[p.id] = p.nom);
+                let csv = 'Matricule;Nom;Promotion;Semestre;Fiches;Date\n';
+                registeredSuccessList.forEach(r => {
+                    const dateStr = r.dateEnregistrement?.toDate ? new Date(r.dateEnregistrement.toDate()).toLocaleString('fr-FR') : new Date(r.dateEnregistrement).toLocaleString('fr-FR');
+                    csv += `"${r.matricule||''}";"${r.etudiantNom}";"${promoMap[r.promotionId]||'-'}";"${r.semestre==='premier'?'Premier':'Deuxième'}";"${(r.fichesValidees||[]).map(f=>f.nom).join(';')}";"${dateStr}"\n`;
+                });
+                const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `enregistrements_${new Date().toISOString().slice(0,10)}.csv`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+                showToast('Export CSV généré', 'success');
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initEventListeners();
+        });
+    </script>
+</body>
+</html>

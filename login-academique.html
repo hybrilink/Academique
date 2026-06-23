@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Connexion - Espace Académique</title>
+  <meta name="application-name" content="hybrilink Doyen">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="hybrilink Doyen">
+    <meta name="description" content="Dashboard Doyen - Consultation avec conversion de devises">
+    <meta name="theme-color" content="#003366">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="icon" type="image/png" href="icon-96x96.png">
+
+    
+    <link rel="manifest" href="manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-blue: #003366; --dark-blue: #002244; --accent-yellow: #ffb347; }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 30px;
+            padding: 40px 35px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            animation: fadeInUp 0.6s ease-out;
+            position: relative;
+        }
+        
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-yellow), var(--primary-blue));
+            border-radius: 30px 30px 0 0;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            box-shadow: 0 10px 25px -5px rgba(0, 51, 102, 0.4);
+        }
+        
+        .logo-icon i { font-size: 45px; color: var(--accent-yellow); }
+        .logo h2 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin-bottom: 5px; }
+        .logo p { font-size: 14px; color: #666; margin-bottom: 0; }
+        
+        .input-group-custom {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .input-group-custom i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-blue);
+            font-size: 18px;
+            z-index: 1;
+        }
+        
+        .input-group-custom input {
+            width: 100%;
+            padding: 14px 15px 14px 50px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        
+        .input-group-custom input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 51, 102, 0.5);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .alert-custom {
+            background: #f8d7da;
+            color: #721c24;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .toast { animation: slideInRight 0.3s ease-out; }
+        
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="bi bi-book-fill"></i>
+                </div>
+                <h2>Espace Académique</h2>
+                <p>Faculté des Sciences Agronomiques</p>
+            </div>
+            
+            <div id="alertMessage" class="alert-custom"></div>
+            
+            <form id="loginForm">
+                <div class="input-group-custom">
+                    <i class="bi bi-envelope-fill"></i>
+                    <input type="email" id="email" placeholder="Adresse email" autocomplete="off" required>
+                </div>
+                <div class="input-group-custom">
+                    <i class="bi bi-lock-fill"></i>
+                    <input type="password" id="password" placeholder="Mot de passe" required>
+                </div>
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <i class="bi bi-box-arrow-in-right"></i> Se connecter
+                </button>
+            </form>
+            
+            <div class="footer">
+                <i class="bi bi-shield-check"></i> HYBRILINK-TECH<br>
+                <img src="t.png" width="30px" alt="HYBRILINK" onerror="this.style.display='none'">
+            </div>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="toast-notification"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
+            authDomain: "fsa-unilu.firebaseapp.com",
+            projectId: "fsa-unilu",
+            storageBucket: "fsa-unilu.firebasestorage.app",
+            messagingSenderId: "36551990738",
+            appId: "1:36551990738:web:e91fdcb53f8aab5d1b7c0b"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const bgColor = type === 'success' ? '#28a745' : (type === 'warning' ? '#ffc107' : '#dc3545');
+            const textColor = type === 'warning' ? '#333' : 'white';
+            const icon = type === 'success' ? 'check-circle-fill' : (type === 'warning' ? 'exclamation-triangle-fill' : 'x-circle-fill');
+            const toastHtml = `<div class="toast" style="background: ${bgColor}; color: ${textColor}; border-radius: 10px; margin-bottom: 10px;"><div class="toast-body"><i class="bi bi-${icon} me-2"></i>${message}</div></div>`;
+            container.insertAdjacentHTML('afterbegin', toastHtml);
+            setTimeout(() => container.firstElementChild?.remove(), 4000);
+        }
+        
+        function showAlert(message, isError = true) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.textContent = message;
+            alertDiv.className = isError ? 'alert-custom' : 'alert-custom';
+            alertDiv.style.display = 'block';
+            setTimeout(() => { alertDiv.style.display = 'none'; }, 5000);
+        }
+        
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showAlert('Veuillez entrer votre email et mot de passe');
+                return;
+            }
+            
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Connexion...';
+            
+            try {
+                const usersRef = db.collection('utilisateurs');
+                const q = await usersRef.where('email', '==', email).where('role', '==', 'academique').get();
+                
+                if (q.empty) {
+                    showAlert('Email ou mot de passe incorrect');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Se connecter';
+                    return;
+                }
+                
+                let userFound = null;
+                q.forEach(doc => {
+                    const userData = doc.data();
+                    if (userData.motDePasse === password) {
+                        userFound = { id: doc.id, ...userData };
+                    }
+                });
+                
+                if (userFound) {
+                    const sessionData = {
+                        id: userFound.id,
+                        nomComplet: userFound.nomComplet,
+                        email: userFound.email,
+                        role: userFound.role,
+                        loginTime: Date.now(),
+                        expires: Date.now() + (24 * 60 * 60 * 1000)
+                    };
+                    localStorage.setItem('session_academique', JSON.stringify(sessionData));
+                    
+                    showToast('Connexion réussie ! Redirection...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'academique.html';
+                    }, 1000);
+                } else {
+                    showAlert('Email ou mot de passe incorrect');
+                }
+            } catch (error) {
+                console.error('Erreur de connexion:', error);
+                showAlert('Erreur de connexion: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Se connecter';
+            }
+        });
+        
+        document.getElementById('email').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+    </script>
+</body>
+</html>

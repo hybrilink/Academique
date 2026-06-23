@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Publication Horaires - Académique</title>
+    <meta name="theme-color" content="#003366">
+    
+    <link rel="manifest" href="manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { 
+            --primary-blue: #003366; 
+            --dark-blue: #002244; 
+            --accent-yellow: #ffb347; 
+            --light-gray: #f0f2f5;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
+        }
+        
+        body { 
+            background: var(--light-gray); 
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar-custom { 
+            background: var(--primary-blue); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            padding: 12px 0;
+        }
+        .navbar-brand { font-weight: bold; font-size: 1.3rem; }
+        
+        .back-btn {
+            background: var(--accent-yellow); color: var(--primary-blue);
+            border: none; padding: 8px 20px; border-radius: 25px;
+            font-weight: bold; transition: all 0.3s;
+            display: inline-flex; align-items: center; gap: 8px;
+            text-decoration: none; cursor: pointer;
+        }
+        .back-btn:hover { background: #ff9800; transform: translateY(-2px); color: var(--primary-blue); }
+        
+        .content-card {
+            background: white; border-radius: 20px; padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s ease; margin-bottom: 30px;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white; border-radius: 20px 20px 0 0;
+            padding: 20px 25px; margin: -30px -30px 25px -30px;
+        }
+        .card-header-custom h4 { margin: 0; font-weight: bold; }
+        .card-header-custom h4 i { color: var(--accent-yellow); }
+        
+        .form-label { font-weight: 600; color: var(--primary-blue); margin-bottom: 8px; font-size: 14px; }
+        
+        .form-control, .form-select {
+            border-radius: 10px; padding: 12px 15px;
+            border: 2px solid #e0e0e0; transition: all 0.3s; font-size: 15px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(0,51,102,0.25);
+        }
+        
+        .semaine-selector {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 2px solid #e0e0e0;
+        }
+        .semaine-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .semaine-badge {
+            background: var(--primary-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-submit {
+            background: var(--primary-blue); color: white;
+            border: none; padding: 14px 30px; border-radius: 12px;
+            font-weight: bold; font-size: 16px; transition: all 0.3s; width: 100%;
+        }
+        .btn-submit:hover { background: var(--dark-blue); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .jours-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px; margin-bottom: 20px;
+        }
+        .jour-btn {
+            background: #f8f9fa; border: 2px solid #dee2e6;
+            border-radius: 12px; padding: 12px 8px;
+            text-align: center; cursor: pointer;
+            transition: all 0.3s; font-weight: 600;
+            font-size: 14px; color: #555;
+        }
+        .jour-btn:hover { background: #e9ecef; transform: translateY(-2px); }
+        .jour-btn.selected { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+        .jour-btn i { display: block; font-size: 20px; margin-bottom: 5px; }
+        
+        .conflit-alert {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #856404;
+        }
+        .conflit-alert.show { display: flex; }
+        .conflit-alert i { font-size: 20px; color: #e65100; }
+        
+        .panier-container {
+            background: #f8f9fa; border-radius: 15px;
+            padding: 20px; margin-bottom: 20px;
+            border: 2px dashed #dee2e6; min-height: 100px;
+        }
+        .panier-item {
+            background: white; border-radius: 10px;
+            padding: 15px; margin-bottom: 10px;
+            border-left: 4px solid var(--primary-blue);
+            display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 10px;
+            transition: all 0.3s;
+        }
+        .panier-item:hover { transform: translateX(3px); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        
+        .panier-jour-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: white; }
+        .panier-jour-badge.Lundi { background: #1565c0; }
+        .panier-jour-badge.Mardi { background: #c62828; }
+        .panier-jour-badge.Mercredi { background: #6a1b9a; }
+        .panier-jour-badge.Jeudi { background: #2e7d32; }
+        .panier-jour-badge.Vendredi { background: #e65100; }
+        .panier-jour-badge.Samedi { background: #283593; }
+        
+        .btn-remove-panier {
+            background: var(--danger-red); color: white;
+            border: none; width: 35px; height: 35px;
+            border-radius: 50%; cursor: pointer;
+            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-remove-panier:hover { background: #c82333; transform: scale(1.1); }
+        
+        .btn-add-panier {
+            background: var(--success-green); color: white;
+            border: none; padding: 10px 20px; border-radius: 10px;
+            cursor: pointer; transition: all 0.3s;
+            font-weight: 600; font-size: 14px;
+        }
+        .btn-add-panier:hover { background: #218838; transform: translateY(-2px); }
+        .btn-add-panier:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .panier-empty { text-align: center; padding: 30px; color: #888; }
+        .panier-empty i { font-size: 40px; margin-bottom: 10px; }
+        
+        /* Info créneaux occupés */
+        .creneaux-occupes {
+            background: #f0f4f8;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .creneaux-occupes strong { color: var(--primary-blue); }
+        .creneau-tag {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin: 2px;
+            font-size: 11px;
+        }
+        
+        .horaires-table {
+            width: 100%; border-collapse: collapse;
+            background: white; border-radius: 15px;
+            overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .horaires-table thead th {
+            background: var(--primary-blue); color: white;
+            padding: 14px 15px; text-align: left;
+            font-weight: 600; font-size: 14px;
+        }
+        .horaires-table tbody td {
+            padding: 14px 15px; border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle; font-size: 14px;
+        }
+        .horaires-table tbody tr:hover { background: #f8f9fa; }
+        .horaires-table tbody tr:last-child td { border-bottom: none; }
+        
+        .badge-jour { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: white; }
+        .badge-jour.Lundi { background: #1565c0; }
+        .badge-jour.Mardi { background: #c62828; }
+        .badge-jour.Mercredi { background: #6a1b9a; }
+        .badge-jour.Jeudi { background: #2e7d32; }
+        .badge-jour.Vendredi { background: #e65100; }
+        .badge-jour.Samedi { background: #283593; }
+        
+        .badge-promo { background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: 500; }
+        .badge-cours { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: 500; }
+        .badge-semaine { background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 15px; font-size: 11px; }
+        .badge-expire { background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 15px; font-size: 11px; }
+        
+        .btn-delete {
+            background: var(--danger-red); color: white;
+            border: none; padding: 5px 12px; border-radius: 8px;
+            cursor: pointer; transition: all 0.3s; font-size: 13px;
+        }
+        .btn-delete:hover { background: #c82333; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: #888; }
+        .empty-state i { font-size: 70px; color: #ccc; margin-bottom: 20px; }
+        
+        .sync-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
+        .sync-badge.online { background: var(--success-green); color: white; }
+        
+        .toast-notification { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast { animation: slideInRight 0.3s ease-out; }
+        
+        .loading-spinner {
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3); border-top-color: white;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .footer-info { text-align: center; margin-top: auto; padding: 20px 0; border-top: 1px solid #e0e0e0; font-size: 12px; color: #888; }
+        .footer-info img { border-radius: 20px; vertical-align: middle; }
+        
+        .info-alert {
+            background: #e8f4fd; border-left: 4px solid var(--primary-blue);
+            border-radius: 10px; padding: 15px; margin-bottom: 25px; font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .content-card { padding: 20px; }
+            .card-header-custom { margin: -20px -20px 20px -20px; padding: 15px 20px; }
+            .jours-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <a class="navbar-brand text-white" href="#"><i class="bi bi-book-fill"></i> FACULTÉ AGRONOMIQUE - UNILU</a>
+            <a href="academique.html" class="back-btn"><i class="bi bi-house-door-fill"></i> Accueil</a>
+        </div>
+    </nav>
+    
+    <div class="container mt-4" style="flex: 1;">
+        <div id="toastContainer" class="toast-notification"></div>
+        
+        <!-- Formulaire -->
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h4><i class="bi bi-calendar-week-fill"></i> Publier un horaire</h4>
+            </div>
+            
+            <div class="info-alert">
+                <i class="bi bi-info-circle-fill"></i>
+                <strong>Fonctionnement :</strong> Sélectionnez la semaine, la promotion et le cours. Pour chaque jour, définissez les horaires et la salle, puis ajoutez au panier. <strong>Le système vérifie uniquement les conflits de créneaux horaires</strong> (même jour, mêmes heures qui se chevauchent). Vous pouvez ajouter plusieurs créneaux pour le même jour s'ils ne se chevauchent pas.
+            </div>
+            
+            <!-- Sélecteur de semaine -->
+            <div class="semaine-selector">
+                <label class="form-label"><i class="bi bi-calendar-range"></i> Semaine concernée</label>
+                <div class="row align-items-end">
+                    <div class="col-md-6 mb-3">
+                        <select class="form-select" id="semaineSelect">
+                            <option value="">-- Sélectionner une semaine --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="semaine-info" id="semaineInfo" style="display:none;">
+                            <span class="semaine-badge" id="semaineBadge"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="promotionHoraire"><i class="bi bi-trophy-fill"></i> Promotion concernée</label>
+                    <select class="form-select" id="promotionHoraire" required>
+                        <option value="">-- Sélectionner une promotion --</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="coursHoraire"><i class="bi bi-book-fill"></i> Cours</label>
+                    <select class="form-select" id="coursHoraire" required>
+                        <option value="">-- Sélectionner d'abord une promotion --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Alerte conflit -->
+            <div class="conflit-alert" id="conflitAlert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span id="conflitMessage"></span>
+            </div>
+            
+            <!-- Sélection du jour -->
+            <label class="form-label"><i class="bi bi-calendar-day"></i> Sélectionnez un jour</label>
+            <div class="jours-grid" id="joursGrid">
+                <div class="jour-btn" data-jour="Lundi"><i class="bi bi-sun-fill"></i> Lundi</div>
+                <div class="jour-btn" data-jour="Mardi"><i class="bi bi-sun-fill"></i> Mardi</div>
+                <div class="jour-btn" data-jour="Mercredi"><i class="bi bi-cloud-sun-fill"></i> Mercredi</div>
+                <div class="jour-btn" data-jour="Jeudi"><i class="bi bi-sun-fill"></i> Jeudi</div>
+                <div class="jour-btn" data-jour="Vendredi"><i class="bi bi-sun-fill"></i> Vendredi</div>
+                <div class="jour-btn" data-jour="Samedi"><i class="bi bi-cloud-fill"></i> Samedi</div>
+            </div>
+            
+            <!-- Créneaux déjà occupés pour le jour sélectionné -->
+            <div class="creneaux-occupes" id="creneauxOccupes" style="display:none;">
+                <strong><i class="bi bi-info-circle"></i> Créneaux déjà occupés ce jour :</strong>
+                <div id="creneauxList"></div>
+            </div>
+            
+            <!-- Détails du jour -->
+            <div id="jourDetail" style="display:none;">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><i class="bi bi-clock-fill"></i> Heure début</label>
+                        <input type="time" class="form-control" id="heureDebut" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><i class="bi bi-clock-fill"></i> Heure fin</label>
+                        <input type="time" class="form-control" id="heureFin" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><i class="bi bi-geo-alt-fill"></i> Salle / Local</label>
+                        <input type="text" class="form-control" id="salleHoraire" placeholder="Ex: Salle 101, Labo...">
+                    </div>
+                </div>
+                <button type="button" class="btn-add-panier" id="addPanierBtn">
+                    <i class="bi bi-cart-plus-fill"></i> Ajouter au panier
+                </button>
+            </div>
+            
+            <!-- Panier -->
+            <div class="panier-container mt-4">
+                <h6><i class="bi bi-cart-fill"></i> Panier d'horaires <span class="badge bg-secondary" id="panierCount">0</span></h6>
+                <div id="panierList">
+                    <div class="panier-empty">
+                        <i class="bi bi-cart-x"></i>
+                        <p>Aucun horaire dans le panier</p>
+                        <small class="text-muted">Ajoutez des créneaux pour les voir apparaître ici</small>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" class="btn-submit mt-3" id="publishAllBtn" disabled>
+                <i class="bi bi-cloud-upload-fill"></i> Publier tout (<span id="publishCount">0</span> créneaux)
+            </button>
+        </div>
+        
+        <!-- Liste des horaires -->
+        <div class="content-card">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 style="color:var(--primary-blue);margin:0;"><i class="bi bi-list-ul"></i> Horaires publiés</h5>
+                <span class="sync-badge online" id="syncBadge"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Temps réel</span>
+            </div>
+            
+            <div id="horairesContainer">
+                <div class="text-center py-5">
+                    <div class="loading-spinner" style="border-color:#e0e0e0;border-top-color:var(--primary-blue);width:40px;height:40px;"></div>
+                    <p class="mt-3 text-muted">Chargement...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="footer-info">
+            <i class="bi bi-shield-check"></i> HYBRILINK-TECH - Votre partenaire digital de A à Z<br>
+            <img src="t.png" width="40px" alt="HYBRILINK" onerror="this.style.display='none'">
+        </div>
+    </div>
+
+    <script>
+        // ========== FIREBASE ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
+            authDomain: "fsa-unilu.firebaseapp.com",
+            projectId: "fsa-unilu",
+            storageBucket: "fsa-unilu.firebasestorage.app",
+            messagingSenderId: "36551990738",
+            appId: "1:36551990738:web:e91fdcb53f8aab5d1b7c0b"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+        
+        // ========== VARIABLES ==========
+        let currentUser = null;
+        let allPromotions = [];
+        let allCours = [];
+        let allHoraires = [];
+        let selectedJour = '';
+        let selectedSemaineId = '';
+        let panier = [];
+        let unsubscribeHoraires = null;
+        let semainesDisponibles = [];
+        
+        // ========== GÉNÉRATION SEMAINES ==========
+        function getLundiDate(date, decalage = 0) {
+            const d = new Date(date);
+            d.setDate(d.getDate() + (decalage * 7));
+            const jour = d.getDay();
+            const diff = d.getDate() - jour + (jour === 0 ? -6 : 1);
+            const lundi = new Date(d.setDate(diff));
+            lundi.setHours(0,0,0,0);
+            return lundi;
+        }
+        
+        function genererSemaines() {
+            const semaines = [];
+            const maintenant = new Date();
+            for (let i = 0; i <= 2; i++) {
+                const debut = getLundiDate(maintenant, i);
+                const fin = new Date(debut);
+                fin.setDate(fin.getDate() + 5);
+                const debutStr = debut.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' });
+                const finStr = fin.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+                semaines.push({
+                    id: `S${debut.getFullYear()}-${String(debut.getMonth()+1).padStart(2,'0')}-${String(debut.getDate()).padStart(2,'0')}`,
+                    debut, fin,
+                    label: `Semaine du ${debutStr} au ${finStr}`,
+                    debutISO: debut.toISOString().split('T')[0],
+                    finISO: fin.toISOString().split('T')[0]
+                });
+            }
+            return semaines;
+        }
+        
+        // ========== SESSION ==========
+        (function() {
+            const s = localStorage.getItem('session_academique');
+            if(!s) { window.location.href='login-academique.html'; return; }
+            try {
+                const d = JSON.parse(s);
+                if(Date.now() > d.expires) { localStorage.removeItem('session_academique'); window.location.href='login-academique.html'; return; }
+                currentUser = d;
+                init();
+            } catch(e) { localStorage.removeItem('session_academique'); window.location.href='login-academique.html'; }
+        })();
+        
+        // ========== UTILITAIRES ==========
+        function showToast(m, t='success') {
+            const c = document.getElementById('toastContainer');
+            const bg = t==='success'?'#28a745':t==='warning'?'#ffc107':'#dc3545';
+            const ic = t==='success'?'check-circle-fill':t==='warning'?'exclamation-triangle-fill':'x-circle-fill';
+            const tc = t==='warning'?'#333':'white';
+            c.insertAdjacentHTML('afterbegin',`<div class="toast" style="background:${bg};color:${tc};border-radius:10px;margin-bottom:10px;"><div class="toast-body"><i class="bi bi-${ic} me-2"></i>${m}</div></div>`);
+            setTimeout(()=>{if(c.firstElementChild)c.firstElementChild.remove();},4000);
+        }
+        function escapeHtml(t){if(!t)return'';const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+        
+        // Heures qui se chevauchent
+        function heuresChevauchent(debut1, fin1, debut2, fin2) {
+            return debut1 < fin2 && fin1 > debut2;
+        }
+        
+        // ========== INIT SEMAINES ==========
+        function initSemainesSelect() {
+            semainesDisponibles = genererSemaines();
+            const sel = document.getElementById('semaineSelect');
+            semainesDisponibles.forEach((s,i) => {
+                sel.innerHTML += `<option value="${s.id}">${i===0?'📍 ':''}${s.label}</option>`;
+            });
+            if(semainesDisponibles.length>0) {
+                sel.value = semainesDisponibles[0].id;
+                selectedSemaineId = semainesDisponibles[0].id;
+                updateSemaineInfo(semainesDisponibles[0]);
+            }
+        }
+        
+        function updateSemaineInfo(s) {
+            const info = document.getElementById('semaineInfo');
+            const badge = document.getElementById('semaineBadge');
+            if(s) {
+                info.style.display='flex';
+                const maintenant = new Date();
+                let sb = '';
+                if(maintenant > s.fin) sb = '<span class="badge bg-warning text-dark ms-2">Passée</span>';
+                else if(maintenant >= s.debut && maintenant <= s.fin) sb = '<span class="badge bg-success ms-2">En cours</span>';
+                else sb = '<span class="badge bg-info ms-2">À venir</span>';
+                badge.innerHTML = `📅 ${s.label} ${sb}`;
+            } else info.style.display='none';
+        }
+        
+        // ========== CHARGEMENT ==========
+        async function chargerPromotions() {
+            const snap = await db.collection('promotions').get();
+            allPromotions = [];
+            snap.forEach(d => allPromotions.push({id:d.id,...d.data()}));
+            allPromotions.sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+            const sel = document.getElementById('promotionHoraire');
+            if(sel) {
+                sel.innerHTML = '<option value="">-- Sélectionner une promotion --</option>';
+                allPromotions.forEach(p => sel.innerHTML += `<option value="${p.id}">${escapeHtml(p.nom)}</option>`);
+            }
+        }
+        
+        async function chargerCours() {
+            const snap = await db.collection('cours').get();
+            allCours = [];
+            snap.forEach(d => allCours.push({id:d.id,...d.data()}));
+        }
+        
+        function mettreAJourCoursSelect(promoId) {
+            const sel = document.getElementById('coursHoraire');
+            if(!sel) return;
+            sel.innerHTML = '<option value="">-- Sélectionner un cours --</option>';
+            if(!promoId) return;
+            const filtres = allCours.filter(c => c.promotionId === promoId);
+            if(filtres.length===0){sel.innerHTML+='<option value="" disabled>Aucun cours pour cette promotion</option>';return;}
+            filtres.forEach(c => sel.innerHTML += `<option value="${c.id}">${escapeHtml(c.nom)} (${c.credits||0} cr) - ${escapeHtml(c.professeurNom||'N/A')}</option>`);
+        }
+        
+        // ========== CRÉNEAUX OCCUPÉS ==========
+        function getCreneauxOccupes(jour) {
+            return allHoraires
+                .filter(h => h.semaineId === selectedSemaineId && h.jour === jour)
+                .map(h => ({ debut: h.debut, fin: h.fin, cours: h.coursNom, prof: h.professeurNom, salle: h.salle }))
+                .sort((a,b) => a.debut.localeCompare(b.debut));
+        }
+        
+        function afficherCreneauxOccupes(jour) {
+            const container = document.getElementById('creneauxOccupes');
+            const list = document.getElementById('creneauxList');
+            const creneaux = getCreneauxOccupes(jour);
+            
+            if (creneaux.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            list.innerHTML = creneaux.map(c => 
+                `<span class="creneau-tag">🕐 ${c.debut}-${c.fin} | ${escapeHtml(c.cours)} (${escapeHtml(c.prof)}) | 🏫 ${escapeHtml(c.salle)}</span>`
+            ).join('');
+        }
+        
+        // ========== VÉRIFICATION CONFLIT (HEURES uniquement) ==========
+        function verifierConflitHeures(jour, debut, fin, professeurId) {
+            if (!selectedSemaineId || !professeurId) return null;
+            
+            return allHoraires.find(h => {
+                if (h.semaineId !== selectedSemaineId) return false;
+                if (h.jour !== jour) return false;
+                if (h.professeurId !== professeurId) return false;
+                // Vérifier le chevauchement des heures
+                return heuresChevauchent(debut, fin, h.debut, h.fin);
+            }) || null;
+        }
+        
+        function verifierConflitSalle(jour, debut, fin, salle) {
+            if (!selectedSemaineId || !salle || salle === 'Non spécifiée') return null;
+            const salleLower = salle.toLowerCase();
+            
+            return allHoraires.find(h => {
+                if (h.semaineId !== selectedSemaineId) return false;
+                if (h.jour !== jour) return false;
+                if ((h.salle || '').toLowerCase() !== salleLower) return false;
+                return heuresChevauchent(debut, fin, h.debut, h.fin);
+            }) || null;
+        }
+        
+        // ========== JOURS ==========
+        document.getElementById('joursGrid').addEventListener('click', function(e) {
+            const btn = e.target.closest('.jour-btn');
+            if(!btn) return;
+            document.querySelectorAll('.jour-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedJour = btn.dataset.jour;
+            document.getElementById('jourDetail').style.display = 'block';
+            document.getElementById('heureDebut').value = '';
+            document.getElementById('heureFin').value = '';
+            document.getElementById('salleHoraire').value = '';
+            document.getElementById('conflitAlert').classList.remove('show');
+            
+            // Afficher les créneaux déjà occupés pour ce jour
+            afficherCreneauxOccupes(selectedJour);
+        });
+        
+        // ========== AJOUT PANIER ==========
+        document.getElementById('addPanierBtn').addEventListener('click', function() {
+            if (!selectedSemaineId) { showToast('Sélectionnez une semaine','warning'); return; }
+            
+            const promoId = document.getElementById('promotionHoraire').value;
+            const coursId = document.getElementById('coursHoraire').value;
+            const debut = document.getElementById('heureDebut').value;
+            const fin = document.getElementById('heureFin').value;
+            const salle = document.getElementById('salleHoraire').value.trim();
+            
+            if(!promoId) { showToast('Sélectionnez une promotion','warning'); return; }
+            if(!coursId) { showToast('Sélectionnez un cours','warning'); return; }
+            if(!selectedJour) { showToast('Sélectionnez un jour','warning'); return; }
+            if(!debut || !fin) { showToast('Définissez les heures','warning'); return; }
+            if(debut >= fin) { showToast('Heure début < Heure fin','warning'); return; }
+            
+            const cours = allCours.find(c => c.id === coursId);
+            if (!cours) { showToast('Cours introuvable','danger'); return; }
+            
+            // ⚠️ Vérifier conflit de CRÉNEAU HORAIRE pour le même prof
+            const conflitProf = verifierConflitHeures(selectedJour, debut, fin, cours.professeurId);
+            if (conflitProf) {
+                document.getElementById('conflitAlert').classList.add('show');
+                document.getElementById('conflitMessage').innerHTML = 
+                    `<strong>⚠️ Conflit de créneau !</strong> <strong>${escapeHtml(conflitProf.professeurNom)}</strong> a déjà un cours le <strong>${selectedJour}</strong> de <strong>${conflitProf.debut}</strong> à <strong>${conflitProf.fin}</strong><br>
+                    <small>Cours : ${escapeHtml(conflitProf.coursNom)} | Salle : ${escapeHtml(conflitProf.salle)}</small>`;
+                return;
+            }
+            
+            // ⚠️ Vérifier conflit de SALLE sur le même créneau
+            const conflitSalle = verifierConflitSalle(selectedJour, debut, fin, salle);
+            if (conflitSalle) {
+                document.getElementById('conflitAlert').classList.add('show');
+                document.getElementById('conflitMessage').innerHTML = 
+                    `<strong>⚠️ Conflit de salle !</strong> La salle <strong>${escapeHtml(salle)}</strong> est occupée le <strong>${selectedJour}</strong> de <strong>${conflitSalle.debut}</strong> à <strong>${conflitSalle.fin}</strong><br>
+                    <small>Cours : ${escapeHtml(conflitSalle.coursNom)} | Prof : ${escapeHtml(conflitSalle.professeurNom)}</small>`;
+                return;
+            }
+            
+            // ✅ Pas de conflit → on peut ajouter (même jour, créneau différent autorisé)
+            const promotion = allPromotions.find(p => p.id === promoId);
+            
+            panier.push({
+                jour: selectedJour,
+                debut, fin,
+                salle: salle || 'Non spécifiée',
+                promotionId: promoId,
+                promotionNom: promotion ? promotion.nom : '',
+                coursId, coursNom: cours.nom,
+                professeurNom: cours.professeurNom || 'N/A',
+                professeurId: cours.professeurId || '',
+                credits: cours.credits || 0
+            });
+            
+            const ordre = { Lundi:1, Mardi:2, Mercredi:3, Jeudi:4, Vendredi:5, Samedi:6 };
+            panier.sort((a,b) => {
+                if (ordre[a.jour] !== ordre[b.jour]) return ordre[a.jour] - ordre[b.jour];
+                return a.debut.localeCompare(b.debut);
+            });
+            
+            afficherPanier();
+            mettreAJourBoutonPublier();
+            
+            document.querySelectorAll('.jour-btn').forEach(b => b.classList.remove('selected'));
+            selectedJour = '';
+            document.getElementById('jourDetail').style.display = 'none';
+            document.getElementById('creneauxOccupes').style.display = 'none';
+            document.getElementById('conflitAlert').classList.remove('show');
+            
+            showToast('✅ Créneau ajouté au panier','success');
+        });
+        
+        function afficherPanier() {
+            const container = document.getElementById('panierList');
+            document.getElementById('panierCount').textContent = panier.length;
+            if(panier.length === 0) {
+                container.innerHTML = `<div class="panier-empty"><i class="bi bi-cart-x"></i><p>Aucun horaire dans le panier</p><small class="text-muted">Ajoutez des créneaux pour les voir apparaître ici</small></div>`;
+                return;
+            }
+            let html = '';
+            panier.forEach((p,i) => {
+                html += `
+                <div class="panier-item">
+                    <div>
+                        <span class="panier-jour-badge ${p.jour}">${p.jour}</span>
+                        <strong class="ms-2">🕐 ${p.debut} - ${p.fin}</strong>
+                        <span class="text-muted ms-2"><i class="bi bi-geo-alt-fill"></i> ${escapeHtml(p.salle)}</span>
+                        <br><small class="text-muted ms-2">📚 ${escapeHtml(p.coursNom)} | 👨‍🏫 ${escapeHtml(p.professeurNom)}</small>
+                    </div>
+                    <button class="btn-remove-panier" onclick="retirerDuPanier(${i})"><i class="bi bi-trash-fill"></i></button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        window.retirerDuPanier = function(i) {
+            panier.splice(i,1);
+            afficherPanier();
+            mettreAJourBoutonPublier();
+            showToast('Retiré du panier','warning');
+        };
+        
+        function mettreAJourBoutonPublier() {
+            document.getElementById('publishCount').textContent = panier.length;
+            document.getElementById('publishAllBtn').disabled = panier.length === 0;
+        }
+        
+        // ========== PUBLICATION ==========
+        document.getElementById('publishAllBtn').addEventListener('click', async function() {
+            if(!selectedSemaineId){showToast('Sélectionnez une semaine','warning');return;}
+            if(panier.length===0){showToast('Panier vide','warning');return;}
+            
+            const semaine = semainesDisponibles.find(s=>s.id===selectedSemaineId);
+            if(!semaine){showToast('Semaine invalide','danger');return;}
+            
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner me-2"></span> Publication...';
+            
+            try {
+                const batch = db.batch();
+                panier.forEach(p => {
+                    const ref = db.collection('horaires').doc();
+                    batch.set(ref, {
+                        jour: p.jour, debut: p.debut, fin: p.fin, salle: p.salle,
+                        promotionId: p.promotionId, promotionNom: p.promotionNom,
+                        coursId: p.coursId, coursNom: p.coursNom,
+                        professeurNom: p.professeurNom, professeurId: p.professeurId,
+                        credits: p.credits,
+                        semaineId: selectedSemaineId, semaineLabel: semaine.label,
+                        semaineDebut: semaine.debutISO, semaineFin: semaine.finISO,
+                        dateExpiration: firebase.firestore.Timestamp.fromDate(new Date(semaine.fin.getTime()+7*86400000)),
+                        creePar: currentUser.id, creeParNom: currentUser.nomComplet,
+                        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                showToast(`✅ ${panier.length} créneau(x) publié(s) !`,'success');
+                panier = [];
+                afficherPanier();
+                mettreAJourBoutonPublier();
+            } catch(err) {
+                console.error(err);
+                showToast('Erreur: '+err.message,'danger');
+            } finally {
+                btn.disabled = panier.length===0;
+                btn.innerHTML = `<i class="bi bi-cloud-upload-fill"></i> Publier tout (<span id="publishCount">${panier.length}</span> créneaux)`;
+            }
+        });
+        
+        // ========== EVENTS ==========
+        document.getElementById('semaineSelect').addEventListener('change', function() {
+            if(panier.length>0 && this.value!==selectedSemaineId) {
+                if(!confirm('Changer de semaine videra le panier. Continuer ?')) { this.value=selectedSemaineId; return; }
+                panier=[]; afficherPanier(); mettreAJourBoutonPublier();
+            }
+            selectedSemaineId = this.value;
+            updateSemaineInfo(semainesDisponibles.find(s=>s.id===selectedSemaineId));
+        });
+        
+        document.getElementById('promotionHoraire').addEventListener('change', function() {
+            mettreAJourCoursSelect(this.value);
+        });
+        
+        // ========== TEMPS RÉEL ==========
+        function initHorairesRealtime() {
+            unsubscribeHoraires = db.collection('horaires').onSnapshot(snap => {
+                allHoraires = [];
+                snap.forEach(d => allHoraires.push({id:d.id,...d.data()}));
+                allHoraires.sort((a,b) => {
+                    if(a.semaineDebut !== b.semaineDebut) return (b.semaineDebut||'').localeCompare(a.semaineDebut||'');
+                    const o = {Lundi:1,Mardi:2,Mercredi:3,Jeudi:4,Vendredi:5,Samedi:6};
+                    if(o[a.jour] !== o[b.jour]) return o[a.jour] - o[b.jour];
+                    return (a.debut||'99:99').localeCompare(b.debut||'99:99');
+                });
+                afficherHoraires();
+            }, err => {
+                console.error(err);
+                document.getElementById('horairesContainer').innerHTML = 
+                    `<div class="empty-state"><i class="bi bi-exclamation-triangle-fill" style="color:#dc3545;"></i><h5>Erreur</h5><p>${err.message}</p><button class="btn btn-warning mt-3" onclick="location.reload()">Réessayer</button></div>`;
+            });
+        }
+        
+        function afficherHoraires() {
+            const container = document.getElementById('horairesContainer');
+            if(allHoraires.length===0) {
+                container.innerHTML = `<div class="empty-state"><i class="bi bi-calendar-x"></i><h5>Aucun horaire</h5><p>Publiez votre premier horaire ci-dessus.</p></div>`;
+                return;
+            }
+            let curSem = '', html = '';
+            allHoraires.forEach(h => {
+                if(h.semaineId !== curSem) {
+                    if(curSem) html += '</tbody></table></div></div><br>';
+                    curSem = h.semaineId;
+                    const maintenant = new Date();
+                    const fin = h.semaineFin ? new Date(h.semaineFin) : null;
+                    const expiree = fin && maintenant > fin;
+                    html += `<div class="mb-4"><h6 style="color:var(--primary-blue);"><i class="bi bi-calendar-range"></i> ${escapeHtml(h.semaineLabel||'')} ${expiree?'<span class="badge-expire ms-2">Expirée</span>':'<span class="badge-semaine ms-2">Active</span>'}</h6><div class="table-responsive"><table class="horaires-table"><thead><tr><th>Jour</th><th>Horaires</th><th>Cours</th><th>Promotion</th><th>Professeur</th><th>Salle</th><th style="width:80px;"></th></tr></thead><tbody>`;
+                }
+                html += `<tr><td><span class="badge-jour ${h.jour}">${h.jour}</span></td><td><strong>${h.debut} - ${h.fin}</strong></td><td><span class="badge-cours"><i class="bi bi-book-fill"></i> ${escapeHtml(h.coursNom)}</span></td><td><span class="badge-promo"><i class="bi bi-trophy-fill"></i> ${escapeHtml(h.promotionNom)}</span></td><td><i class="bi bi-person-fill"></i> ${escapeHtml(h.professeurNom)}</td><td>${escapeHtml(h.salle)}</td><td><button class="btn-delete" onclick="supprimerHoraire('${h.id}')"><i class="bi bi-trash-fill"></i></button></td></tr>`;
+            });
+            if(curSem) html += '</tbody></table></div></div>';
+            container.innerHTML = html;
+        }
+        
+        window.supprimerHoraire = async function(id) {
+            if(!confirm('Supprimer ?')) return;
+            await db.collection('horaires').doc(id).delete();
+            showToast('Supprimé','warning');
+        };
+        
+        async function nettoyerExpires() {
+            const maintenant = new Date(); maintenant.setHours(0,0,0,0);
+            const snap = await db.collection('horaires').where('dateExpiration','<',firebase.firestore.Timestamp.fromDate(maintenant)).get();
+            if(!snap.empty){const b=db.batch();snap.forEach(d=>b.delete(d.ref));await b.commit();console.log(`🗑️ ${snap.size} expirés`);}
+        }
+        
+        async function init() {
+            initSemainesSelect();
+            await Promise.all([chargerPromotions(), chargerCours()]);
+            initHorairesRealtime();
+            nettoyerExpires();
+            setInterval(nettoyerExpires, 3600000);
+            console.log('✅ Horaires prêt');
+        }
+        
+        window.addEventListener('beforeunload', ()=>{if(unsubscribeHoraires)unsubscribeHoraires();});
+    </script>
+</body>
+</html>

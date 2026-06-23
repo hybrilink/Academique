@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Attribution Projet - Académique</title>
+    <meta name="theme-color" content="#003366">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root { 
+            --primary-blue: #003366; 
+            --dark-blue: #002244; 
+            --accent-yellow: #ffb347; 
+            --light-gray: #f0f2f5;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background: var(--light-gray); 
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+        
+        .navbar-custom { 
+            background: var(--primary-blue); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1rem;
+            color: white !important;
+        }
+        
+        .btn-back {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 18px;
+            border-radius: 25px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        
+        .btn-back:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateX(-3px);
+            color: white;
+        }
+        
+        .container-custom {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px 15px 40px;
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        
+        .section-card h3 {
+            color: var(--primary-blue);
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+        
+        .section-card .subtitle {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-blue);
+            font-size: 0.9rem;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 12px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(0,51,102,0.15);
+        }
+        
+        .btn-action {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .btn-action:hover {
+            background: var(--dark-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,51,102,0.3);
+        }
+        
+        .btn-action:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-warning-action {
+            background: var(--accent-yellow);
+            color: var(--primary-blue);
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .btn-warning-action:hover {
+            background: #ff9800;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255,179,71,0.3);
+        }
+        
+        .btn-success-action {
+            background: var(--success-green);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .btn-success-action:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40,167,69,0.3);
+        }
+        
+        .professor-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .professor-checkbox-item:hover {
+            border-color: var(--primary-blue);
+            background: #f8f9fa;
+        }
+        
+        .professor-checkbox-item.selected {
+            border-color: var(--primary-blue);
+            background: #e3f2fd;
+        }
+        
+        .professor-checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .professor-info {
+            flex: 1;
+        }
+        
+        .professor-name {
+            font-weight: 600;
+            color: var(--primary-blue);
+        }
+        
+        .professor-details {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        
+        .student-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary-blue);
+        }
+        
+        .student-card .student-name {
+            font-weight: 600;
+            color: var(--primary-blue);
+        }
+        
+        .student-card .student-info {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-right: 40px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+        
+        .alert-custom {
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner-box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e0e0e0;
+            border-top: 5px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .container-custom {
+                padding: 15px 10px 30px;
+            }
+            .section-card {
+                padding: 20px 15px;
+                border-radius: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-diagram-3-fill"></i> ATTRIBUTION PROJETS
+            </a>
+            <a href="academique.html" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </nav>
+    
+    <div class="container-custom" id="mainContent">
+        <div id="loadingIndicator" class="text-center mt-5">
+            <div class="spinner"></div>
+            <p class="text-muted mt-3">Chargement des données...</p>
+        </div>
+    </div>
+    
+    <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+        <div class="loading-spinner-box">
+            <div class="spinner"></div>
+            <p class="mb-0" id="loadingText">Traitement en cours...</p>
+        </div>
+    </div>
+
+    <script>
+        // ==================== FIREBASE ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
+            authDomain: "fsa-unilu.firebaseapp.com",
+            projectId: "fsa-unilu",
+            storageBucket: "fsa-unilu.firebasestorage.app",
+            messagingSenderId: "36551990738",
+            appId: "1:36551990738:web:e91fdcb53f8aab5d1b7c0b"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // ==================== LISTE DES DÉPARTEMENTS ====================
+        const DEPARTEMENTS = [
+            "Agronomie Générale",
+            "Économie Agricole",
+            "Sciences du Sol",
+            "Protection des Végétaux",
+            "Zootechnie",
+            "Génie Rural"
+        ];
+        
+        function getDepartementName(deptValue) {
+            if (DEPARTEMENTS.includes(deptValue)) return deptValue;
+            return deptValue || 'Non défini';
+        }
+        
+        // ==================== SESSION ====================
+        let currentUser = null;
+        
+        function checkSession() {
+            const session = localStorage.getItem('session_academique');
+            if (!session) {
+                window.location.href = 'login-academique.html';
+                return false;
+            }
+            try {
+                const data = JSON.parse(session);
+                if (Date.now() > data.expires) {
+                    localStorage.removeItem('session_academique');
+                    window.location.href = 'login-academique.html';
+                    return false;
+                }
+                currentUser = data;
+                return true;
+            } catch(e) {
+                window.location.href = 'login-academique.html';
+                return false;
+            }
+        }
+        
+        // ==================== UTILITAIRES ====================
+        function showLoading(show, message = 'Traitement en cours...') {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+            document.getElementById('loadingText').textContent = message;
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-custom');
+            if (existing) existing.remove();
+            
+            const colors = {
+                success: { bg: '#28a745', icon: 'check-circle-fill' },
+                warning: { bg: '#ffc107', icon: 'exclamation-triangle-fill', textColor: '#333' },
+                danger: { bg: '#dc3545', icon: 'x-circle-fill' },
+                info: { bg: '#17a2b8', icon: 'info-circle-fill' }
+            };
+            const config = colors[type] || colors.success;
+            const textColor = config.textColor || 'white';
+            
+            const toastHtml = `
+                <div class="toast-custom" style="position:fixed;top:20px;right:20px;z-index:10000;background:${config.bg};color:${textColor};padding:15px 20px;border-radius:12px;box-shadow:0 5px 20px rgba(0,0,0,0.2);max-width:350px;font-weight:500;">
+                    <i class="bi bi-${config.icon} me-2"></i>${message}
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+            setTimeout(() => {
+                const t = document.querySelector('.toast-custom');
+                if (t) t.remove();
+            }, 4000);
+        }
+        
+        // ==================== DONNÉES ====================
+        let allProfessors = [];
+        let allStudents = [];
+        let allProjects = [];
+        let allPromotions = [];
+        
+        async function loadProfessors() {
+            try {
+                const snapshot = await db.collection('utilisateurs')
+                    .where('role', '==', 'professeur')
+                    .get();
+                allProfessors = [];
+                snapshot.forEach(doc => {
+                    allProfessors.push({ id: doc.id, ...doc.data() });
+                });
+                allProfessors.sort((a, b) => (a.nomComplet || '').localeCompare(b.nomComplet || ''));
+                return allProfessors;
+            } catch (error) {
+                console.error('Erreur chargement professeurs:', error);
+                return [];
+            }
+        }
+        
+        async function loadStudents() {
+            try {
+                const snapshot = await db.collection('etudiants').get();
+                allStudents = [];
+                snapshot.forEach(doc => {
+                    allStudents.push({ id: doc.id, ...doc.data() });
+                });
+                return allStudents;
+            } catch (error) {
+                console.error('Erreur chargement étudiants:', error);
+                return [];
+            }
+        }
+        
+        async function loadProjects() {
+            try {
+                const snapshot = await db.collection('projets').get();
+                allProjects = [];
+                snapshot.forEach(doc => {
+                    allProjects.push({ id: doc.id, ...doc.data() });
+                });
+                return allProjects;
+            } catch (error) {
+                console.error('Erreur chargement projets:', error);
+                return [];
+            }
+        }
+        
+        async function loadPromotions() {
+            try {
+                const snapshot = await db.collection('promotions').get();
+                allPromotions = [];
+                snapshot.forEach(doc => {
+                    allPromotions.push({ id: doc.id, ...doc.data() });
+                });
+                return allPromotions;
+            } catch (error) {
+                console.error('Erreur chargement promotions:', error);
+                return [];
+            }
+        }
+        
+        function getProfessorName(profId) {
+            const prof = allProfessors.find(p => p.id === profId);
+            return prof ? (prof.nomComplet || prof.email || profId) : profId;
+        }
+        
+        function getPromotionName(promotionId) {
+            if (!promotionId) return 'Non définie';
+            const promo = allPromotions.find(p => p.id === promotionId);
+            if (promo) return promo.nom;
+            return promotionId;
+        }
+        
+        // ==================== RENDU ====================
+        async function renderPage() {
+            const container = document.getElementById('mainContent');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            
+            await loadPromotions();
+            await loadProfessors();
+            await loadStudents();
+            await loadProjects();
+            
+            let html = '';
+            
+            // ============ SECTION 1 : Assignation automatique ============
+            html += `
+                <div class="section-card">
+                    <h3><i class="bi bi-people-fill me-2"></i>Assignation Automatique des Directeurs</h3>
+                    <p class="subtitle">Sélectionnez les professeurs qui seront directeurs de projet. Les étudiants sans directeur seront répartis automatiquement.</p>
+                    
+                    <div class="alert alert-info alert-custom">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Fonctionnement :</strong> Les étudiants sans directeur seront répartis équitablement entre les professeurs sélectionnés.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-person-badge-fill me-1"></i> Professeurs disponibles pour la direction de projet
+                        </label>
+                        <div id="professorsCheckboxList">
+                            ${allProfessors.length === 0 ? '<p class="text-muted">Aucun professeur trouvé</p>' : 
+                                allProfessors.map(prof => `
+                                    <label class="professor-checkbox-item" data-prof-id="${prof.id}">
+                                        <input type="checkbox" value="${prof.id}" class="prof-checkbox">
+                                        <div class="professor-info">
+                                            <div class="professor-name">${escapeHtml(prof.nomComplet || 'Sans nom')}</div>
+                                            <div class="professor-details">
+                                                <i class="bi bi-envelope"></i> ${escapeHtml(prof.email || 'N/A')} 
+                                                ${prof.telephone ? `| <i class="bi bi-telephone"></i> ${escapeHtml(prof.telephone)}` : ''}
+                                                ${prof.departement ? `| <i class="bi bi-building"></i> ${escapeHtml(prof.departement)}` : ''}
+                                            </div>
+                                        </div>
+                                    </label>
+                                `).join('')
+                            }
+                        </div>
+                    </div>
+                    
+                    <button class="btn-success-action" id="btnAutoAssign" onclick="autoAssignDirectors()">
+                        <i class="bi bi-magic me-2"></i> Valider l'assignation automatique
+                    </button>
+                </div>
+            `;
+            
+            // ============ SECTION 2 : Changer un directeur ============
+            html += `
+                <div class="section-card">
+                    <h3><i class="bi bi-arrow-left-right me-2"></i>Changer le Directeur d'un Étudiant</h3>
+                    <p class="subtitle">Modifiez manuellement l'assignation d'un directeur pour un étudiant spécifique.</p>
+                    
+                    <form id="changeDirectorForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="matriculeEtudiant" class="form-label">
+                                    <i class="bi bi-search me-1"></i> Matricule de l'étudiant
+                                </label>
+                                <div class="search-box">
+                                    <input type="text" class="form-control" id="matriculeEtudiant" 
+                                           placeholder="Entrez le matricule..." required>
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <div id="studentPreview" class="mt-2"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="nouveauDirecteur" class="form-label">
+                                    <i class="bi bi-person-check-fill me-1"></i> Nouveau directeur
+                                </label>
+                                <select class="form-select" id="nouveauDirecteur" required>
+                                    <option value="">-- Sélectionnez un professeur --</option>
+                                    ${allProfessors.map(prof => `
+                                        <option value="${prof.id}">${escapeHtml(prof.nomComplet || prof.email || prof.id)}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-warning-action" id="btnChangeDirector">
+                            <i class="bi bi-check-circle me-2"></i> Valider le changement
+                        </button>
+                    </form>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            
+            // Setup listeners
+            setupCheckboxListeners();
+            setupMatriculeSearch();
+            setupChangeDirectorForm();
+        }
+        
+        function setupCheckboxListeners() {
+            document.querySelectorAll('.professor-checkbox-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'INPUT') return;
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    this.classList.toggle('selected', checkbox.checked);
+                });
+                
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', function() {
+                    item.classList.toggle('selected', this.checked);
+                });
+            });
+        }
+        
+        function setupMatriculeSearch() {
+            const input = document.getElementById('matriculeEtudiant');
+            if (!input) return;
+            
+            input.addEventListener('input', function() {
+                const matricule = this.value.trim().toLowerCase();
+                const preview = document.getElementById('studentPreview');
+                
+                if (matricule.length < 2) {
+                    preview.innerHTML = '';
+                    return;
+                }
+                
+                const student = allStudents.find(s => 
+                    (s.matricule && s.matricule.toLowerCase().includes(matricule))
+                );
+                
+                if (student) {
+                    const project = allProjects.find(p => p.etudiantId === student.id);
+                    const deptName = project ? getDepartementName(project.departementId) : 'N/A';
+                    const currentDirector = project && project.directeurId ? getProfessorName(project.directeurId) : 'Non assigné';
+                    const promotionName = getPromotionName(student.promotion);
+                    
+                    preview.innerHTML = `
+                        <div class="student-card">
+                            <div class="student-name">
+                                <i class="bi bi-person-check"></i> ${escapeHtml(student.nom || 'N/A')}
+                            </div>
+                            <div class="student-info">
+                                Promotion: ${escapeHtml(promotionName)} | 
+                                Département: ${escapeHtml(deptName)} | 
+                                Directeur actuel: ${escapeHtml(currentDirector)}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    preview.innerHTML = '<p class="text-muted mt-1"><i class="bi bi-exclamation-circle"></i> Aucun étudiant trouvé avec ce matricule</p>';
+                }
+            });
+        }
+        
+        function setupChangeDirectorForm() {
+            const form = document.getElementById('changeDirectorForm');
+            if (!form) return;
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const matricule = document.getElementById('matriculeEtudiant').value.trim();
+                const nouveauDirecteurId = document.getElementById('nouveauDirecteur').value;
+                
+                if (!matricule) {
+                    showToast('Veuillez entrer un matricule', 'warning');
+                    return;
+                }
+                
+                if (!nouveauDirecteurId) {
+                    showToast('Veuillez sélectionner un nouveau directeur', 'warning');
+                    return;
+                }
+                
+                const student = allStudents.find(s => s.matricule === matricule);
+                if (!student) {
+                    showToast('Aucun étudiant trouvé avec ce matricule', 'danger');
+                    return;
+                }
+                
+                const project = allProjects.find(p => p.etudiantId === student.id);
+                if (!project) {
+                    showToast('Cet étudiant n\'a pas encore soumis de projet', 'danger');
+                    return;
+                }
+                
+                const promotionName = getPromotionName(student.promotion);
+                
+                if (!confirm(`Confirmer le changement de directeur pour l'étudiant ${student.nom || matricule} (${promotionName}) ?\n\nNouveau directeur : ${getProfessorName(nouveauDirecteurId)}`)) {
+                    return;
+                }
+                
+                showLoading(true, 'Mise à jour du directeur...');
+                
+                try {
+                    await db.collection('projets').doc(project.id).update({
+                        directeurId: nouveauDirecteurId
+                    });
+                    
+                    showLoading(false);
+                    showToast('✅ Directeur changé avec succès !', 'success');
+                    
+                    // Réinitialiser le formulaire
+                    document.getElementById('matriculeEtudiant').value = '';
+                    document.getElementById('nouveauDirecteur').value = '';
+                    document.getElementById('studentPreview').innerHTML = '';
+                    
+                } catch (error) {
+                    showLoading(false);
+                    console.error('Erreur changement directeur:', error);
+                    showToast('❌ Erreur : ' + error.message, 'danger');
+                }
+            });
+        }
+        
+        async function autoAssignDirectors() {
+            const selectedCheckboxes = document.querySelectorAll('.prof-checkbox:checked');
+            const selectedProfIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            
+            if (selectedProfIds.length === 0) {
+                showToast('Veuillez sélectionner au moins un professeur', 'warning');
+                return;
+            }
+            
+            // Trouver les projets sans directeur
+            const projectsWithoutDirector = allProjects.filter(p => !p.directeurId);
+            
+            if (projectsWithoutDirector.length === 0) {
+                showToast('Tous les étudiants ont déjà un directeur assigné', 'info');
+                return;
+            }
+            
+            if (!confirm(`Assigner automatiquement ${projectsWithoutDirector.length} étudiant(s) sans directeur à ${selectedProfIds.length} professeur(s) sélectionné(s) ?`)) {
+                return;
+            }
+            
+            showLoading(true, 'Assignation automatique en cours...');
+            
+            try {
+                // Répartition équitable
+                const batch = db.batch();
+                let profIndex = 0;
+                
+                projectsWithoutDirector.forEach(project => {
+                    const profId = selectedProfIds[profIndex % selectedProfIds.length];
+                    const projectRef = db.collection('projets').doc(project.id);
+                    batch.update(projectRef, { directeurId: profId });
+                    profIndex++;
+                });
+                
+                await batch.commit();
+                
+                showLoading(false);
+                showToast(`✅ ${projectsWithoutDirector.length} étudiant(s) assigné(s) avec succès !`, 'success');
+                
+            } catch (error) {
+                showLoading(false);
+                console.error('Erreur assignation:', error);
+                showToast('❌ Erreur : ' + error.message, 'danger');
+            }
+        }
+        
+        // ==================== INITIALISATION ====================
+        async function init() {
+            if (!checkSession()) return;
+            console.log('🚀 Page Attribution Projets - Initialisation');
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            await renderPage();
+            console.log('✅ Page Attribution Projets prête');
+        }
+        
+        init();
+    </script>
+</body>
+</html>

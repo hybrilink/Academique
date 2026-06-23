@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Publication Communication - Espace Académique</title>
+    <meta name="theme-color" content="#003366">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="icon" type="image/png" href="icon-96x96.png">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-blue: #003366; --dark-blue: #002244; --accent-yellow: #ffb347; --danger-red: #dc3545; --success-green: #28a745; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+        
+        .navbar-custom { background: var(--primary-blue); box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 12px 0; }
+        .profile-photo { width: 45px; height: 45px; border-radius: 50%; background: var(--accent-yellow); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .profile-photo i { font-size: 28px; color: var(--primary-blue); }
+        .navbar-right { display: flex; align-items: center; gap: 15px; }
+        
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
+        .btn-back { background: var(--primary-blue); color: white; border: none; padding: 8px 20px; border-radius: 25px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; cursor: pointer; text-decoration: none; }
+        .btn-back:hover { background: var(--dark-blue); transform: translateY(-2px); }
+        
+        .content-card { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { font-weight: 600; color: var(--primary-blue); margin-bottom: 8px; display: block; }
+        .form-control, .form-select { border: 2px solid #e0e0e0; border-radius: 12px; padding: 12px 15px; transition: all 0.3s; width: 100%; }
+        .form-control:focus, .form-select:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(0,51,102,0.1); outline: none; }
+        textarea.form-control { resize: vertical; min-height: 120px; }
+        
+        .btn-submit { background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; font-size: 16px; }
+        .btn-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,51,102,0.3); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .btn-delete-all { background: var(--danger-red); color: white; border: none; padding: 8px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: all 0.3s; font-size: 14px; }
+        .btn-delete-all:hover { background: #c82333; transform: translateY(-2px); }
+        
+        .promotions-checkbox-group { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; max-height: 250px; overflow-y: auto; }
+        .promotion-checkbox-item { margin-bottom: 10px; padding: 8px; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; }
+        .promotion-checkbox-item:hover { background: #e8f4fd; }
+        .promotion-checkbox-item input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        .checkbox-select-all { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #dee2e6; font-weight: bold; }
+        
+        .date-range { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .communique-card { background: #f8f9fa; border-radius: 15px; padding: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary-blue); transition: all 0.3s; position: relative; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .communique-card:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .communique-card.expired { opacity: 0.5; border-left-color: #999; background: #f5f5f5; text-decoration: line-through; }
+        .communique-title { font-size: 18px; font-weight: bold; color: var(--primary-blue); margin-bottom: 10px; padding-right: 40px; }
+        .communique-date { font-size: 12px; color: #888; margin-bottom: 10px; display: flex; gap: 15px; flex-wrap: wrap; }
+        .communique-description { margin: 10px 0; line-height: 1.6; font-size: 14px; color: #555; }
+        .promotion-badge { display: inline-block; background: #e8f4fd; color: var(--primary-blue); padding: 3px 10px; border-radius: 15px; margin-right: 5px; margin-bottom: 5px; font-size: 11px; }
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-expired { background: #f8d7da; color: #721c24; }
+        .status-upcoming { background: #fff3cd; color: #856404; }
+        .status-notified { background: #cce5ff; color: #004085; }
+        
+        .btn-delete { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--danger-red); cursor: pointer; font-size: 18px; transition: all 0.2s; }
+        .btn-delete:hover { color: #a71d2a; transform: scale(1.2); }
+        
+        .notification-info { background: #d4edda; border: 1px solid #c3e6cb; border-radius: 10px; padding: 10px 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 14px; color: #155724; }
+        .notification-info i { font-size: 20px; }
+        
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-card .stat-number { font-size: 32px; font-weight: bold; color: var(--primary-blue); }
+        .stat-card .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
+        
+        .footer-info { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #888; }
+        .toast-notification { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast { animation: slideInRight 0.3s ease-out; }
+        
+        .profile-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .profile-modal-content { background: white; border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; }
+        .btn-action { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; width: 100%; margin-top: 5px; }
+        .btn-action:hover { background: var(--dark-blue); }
+        
+        .empty-state { text-align: center; padding: 40px; color: #888; }
+        .empty-state i { font-size: 60px; margin-bottom: 15px; opacity: 0.5; }
+        
+        .loading-spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #003366; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box input { padding-left: 40px; }
+        .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
+        
+        @media (max-width: 768px) {
+            .date-range { grid-template-columns: 1fr; }
+            .content-card { padding: 20px; }
+            .communique-title { font-size: 16px; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <a class="navbar-brand text-white" href="academique.html">
+                <i class="bi bi-book-fill"></i> FACULTÉ AGRONOMIQUE - UNILU
+            </a>
+            <div class="navbar-right">
+                <div class="profile-photo" id="profileBtn"><i class="bi bi-person-circle"></i></div>
+                <button class="btn btn-outline-light btn-sm" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Déconnexion</button>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <div id="toastContainer" class="toast-notification"></div>
+        
+        <div class="page-header">
+            <h4><i class="bi bi-megaphone-fill me-2" style="color: var(--primary-blue);"></i>Publication de Communication</h4>
+            <button class="btn-back" onclick="window.location.href='academique.html'">
+                <i class="bi bi-house-door-fill"></i> Accueil
+            </button>
+        </div>
+        
+        <!-- Info notifications -->
+        <div class="notification-info" id="notifInfo">
+            <i class="bi bi-info-circle-fill"></i>
+            <span id="notifInfoText">Vérification du service de notifications...</span>
+        </div>
+        
+        <!-- Statistiques -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card">
+                <div class="stat-number" id="statTotal">0</div>
+                <div class="stat-label">Total communiqués</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statActifs">0</div>
+                <div class="stat-label">Actifs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statExpires">0</div>
+                <div class="stat-label">Expirés</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statNotifies">0</div>
+                <div class="stat-label">Notifications envoyées</div>
+            </div>
+        </div>
+        
+        <!-- Formulaire de publication -->
+        <div class="content-card">
+            <h5 class="mb-4"><i class="bi bi-pencil-square"></i> Nouvelle communication</h5>
+            
+            <form id="communiqueForm" autocomplete="off">
+                <div class="form-group">
+                    <label class="form-label"><i class="bi bi-tag-fill"></i> Titre du communiqué <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="titre" required placeholder="Ex: Report du cours de Botanique">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="bi bi-file-text-fill"></i> Description / Corps du message <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="description" rows="5" required placeholder="Écrivez le contenu détaillé de votre communiqué ici..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="bi bi-diagram-3"></i> Promotions concernées <span class="text-danger">*</span></label>
+                    <div id="promotionsCheckboxGroup" class="promotions-checkbox-group">
+                        <div class="checkbox-select-all">
+                            <input type="checkbox" id="selectAllPromotions"> 
+                            <label for="selectAllPromotions"><strong>Sélectionner toutes les promotions</strong></label>
+                        </div>
+                        <div id="promotionsCheckboxList">Chargement des promotions...</div>
+                    </div>
+                    <small class="text-muted">Les étudiants des promotions sélectionnées recevront une notification push</small>
+                </div>
+                
+                <div class="date-range">
+                    <div class="form-group">
+                        <label class="form-label"><i class="bi bi-calendar-start"></i> Date de début <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="dateDebut" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><i class="bi bi-calendar-end"></i> Date de fin <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="dateFin" required>
+                        <small class="text-muted">Le communiqué sera automatiquement supprimé après cette date</small>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="bi bi-send-fill"></i> Publier le communiqué
+                </button>
+            </form>
+        </div>
+        
+        <!-- Liste des communiqués -->
+        <div class="content-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Communiqués publiés</h5>
+                <button class="btn-delete-all" onclick="supprimerTousExpires()">
+                    <i class="bi bi-trash"></i> Supprimer tous les expirés
+                </button>
+            </div>
+            
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" class="form-control" id="searchInput" placeholder="Rechercher un communiqué..." oninput="filtrerCommuniques()">
+            </div>
+            
+            <div id="communiquesList">
+                <!-- Les communiqués s'affichent ici en temps réel -->
+            </div>
+        </div>
+        
+        <div class="footer-info">
+            <i class="bi bi-shield-check"></i> HYBRILINK-TECH - Votre partenaire digital<br>
+            <img src="t.png" width="40px" alt="HYBRILINK" onerror="this.style.display='none'">
+        </div>
+    </div>
+    
+    <!-- Modal Profil -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-modal-content">
+            <div class="text-center">
+                <i class="bi bi-person-circle" style="font-size:70px;color:var(--primary-blue);"></i>
+                <h4 id="profilNom"></h4>
+                <p id="profilEmail"></p>
+                <p id="profilRole"></p>
+                <hr>
+                <h6>Changer mot de passe</h6>
+                <input type="password" class="form-control mb-2" id="newPassword" placeholder="Nouveau mot de passe">
+                <input type="password" class="form-control mb-2" id="confirmNewPassword" placeholder="Confirmer">
+                <button class="btn-action" id="changePasswordBtn">Modifier</button>
+                <button class="btn btn-secondary w-100 mt-2" onclick="closeProfileModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
+            authDomain: "fsa-unilu.firebaseapp.com",
+            projectId: "fsa-unilu",
+            storageBucket: "fsa-unilu.firebasestorage.app",
+            messagingSenderId: "36551990738",
+            appId: "1:36551990738:web:e91fdcb53f8aab5d1b7c0b"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        
+        let currentUser = null;
+        let allPromotions = [];
+        let tousCommuniques = [];
+        let unsubscriber = null;
+        
+        // ==================== SESSION ====================
+        (function initSession() {
+            const session = localStorage.getItem('session_academique');
+            if (!session) { window.location.href = 'login-academique.html'; return; }
+            
+            try {
+                const data = JSON.parse(session);
+                if (Date.now() > data.expires) {
+                    localStorage.removeItem('session_academique');
+                    window.location.href = 'login-academique.html';
+                    return;
+                }
+                currentUser = data;
+            } catch(e) {
+                localStorage.removeItem('session_academique');
+                window.location.href = 'login-academique.html';
+            }
+        })();
+        
+        // ==================== UTILITAIRES ====================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const colors = { success: '#28a745', warning: '#ffc107', danger: '#dc3545', info: '#17a2b8' };
+            const icons = { success: 'check-circle-fill', warning: 'exclamation-triangle-fill', danger: 'x-circle-fill', info: 'info-circle-fill' };
+            const bg = colors[type] || colors.success;
+            const icon = icons[type] || icons.success;
+            const textColor = type === 'warning' ? '#333' : 'white';
+            const html = `<div class="toast" style="background:${bg};color:${textColor};border-radius:10px;margin-bottom:10px;"><div class="toast-body"><i class="bi bi-${icon} me-2"></i>${message}</div></div>`;
+            container.insertAdjacentHTML('afterbegin', html);
+            setTimeout(() => { if(container.firstElementChild) container.firstElementChild.remove(); }, 5000);
+        }
+        
+        function escapeHtml(t) {
+            if (!t) return '';
+            const d = document.createElement('div');
+            d.textContent = t;
+            return d.innerHTML;
+        }
+        
+        function formatDate(date) {
+            if (!date) return '-';
+            try {
+                if (date.toDate) date = date.toDate();
+                else if (date.seconds) date = new Date(date.seconds * 1000);
+                return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } catch(e) { return '-'; }
+        }
+        
+        function formatDateTime(date) {
+            if (!date) return '-';
+            try {
+                if (date.toDate) date = date.toDate();
+                else if (date.seconds) date = new Date(date.seconds * 1000);
+                return date.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch(e) { return '-'; }
+        }
+        
+        // ==================== VÉRIFICATION NOTIFICATIONS ====================
+        async function verifierSupportNotifications() {
+            const infoText = document.getElementById('notifInfoText');
+            
+            if (!('serviceWorker' in navigator)) {
+                document.getElementById('notifInfo').className = 'notification-info';
+                document.getElementById('notifInfo').style.background = '#fff3cd';
+                document.getElementById('notifInfo').style.border = '1px solid #ffc107';
+                document.getElementById('notifInfo').style.color = '#856404';
+                infoText.textContent = '⚠️ Service Worker non supporté - Notifications désactivées';
+                return false;
+            }
+            
+            if (!('Notification' in window)) {
+                infoText.textContent = '⚠️ API Notification non supportée';
+                return false;
+            }
+            
+            // Vérifier le Service Worker
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+                document.getElementById('notifInfo').style.background = '#d4edda';
+                document.getElementById('notifInfo').style.border = '1px solid #c3e6cb';
+                document.getElementById('notifInfo').style.color = '#155724';
+                infoText.innerHTML = '<i class="bi bi-check-circle-fill"></i> Service de notifications actif - Les étudiants recevront des notifications push en temps réel';
+                return true;
+            } else {
+                infoText.textContent = '⚠️ Service Worker non enregistré';
+                return false;
+            }
+        }
+        
+        // ==================== NOTIFICATIONS PUSH ====================
+        async function envoyerNotificationPush(communique) {
+            try {
+                // 1. Récupérer tous les abonnements Push des étudiants concernés
+                const subscriptionsSnapshot = await db.collection('pushSubscriptions').get();
+                
+                let notificationsCrees = 0;
+                const batch = db.batch();
+                
+                for (const doc of subscriptionsSnapshot.docs) {
+                    const subscription = doc.data();
+                    
+                    // Vérifier si l'étudiant est dans une promotion concernée
+                    if (subscription.promotion && communique.promotions.includes(subscription.promotion)) {
+                        // Créer une notification dans Firestore
+                        const notifRef = db.collection('notifications').doc();
+                        batch.set(notifRef, {
+                            etudiantId: subscription.etudiantId,
+                            titre: '📢 ' + communique.titre,
+                            message: communique.description.substring(0, 150),
+                            description: communique.description,
+                            communiqueId: communique.id,
+                            promotions: communique.promotions,
+                            dateEnvoi: firebase.firestore.FieldValue.serverTimestamp(),
+                            lu: false,
+                            type: 'communique',
+                            url: 'communiquer.html?comm=' + communique.id
+                        });
+                        notificationsCrees++;
+                    }
+                }
+                
+                await batch.commit();
+                
+                // 2. Déclencher le Service Worker pour vérification immédiate
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'CHECK_NOTIFICATIONS',
+                        urgent: true,
+                        communiqueId: communique.id
+                    });
+                }
+                
+                // 3. Mettre à jour le compteur dans le communiqué
+                await db.collection('communiques').doc(communique.id).update({
+                    notificationsEnvoyees: notificationsCrees,
+                    notificationEnvoyee: true
+                });
+                
+                console.log(`✅ ${notificationsCrees} notifications créées`);
+                return notificationsCrees;
+                
+            } catch (error) {
+                console.error('❌ Erreur envoi notifications:', error);
+                return 0;
+            }
+        }
+        
+        // ==================== SUPPRESSION EXPIRÉS ====================
+        async function supprimerCommuniquesExpires() {
+            try {
+                const maintenant = new Date();
+                const snapshot = await db.collection('communiques').get();
+                const batch = db.batch();
+                let supprimes = 0;
+                
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    if (data.dateFin) {
+                        let dateFin;
+                        try {
+                            dateFin = data.dateFin.toDate ? data.dateFin.toDate() : new Date(data.dateFin.seconds * 1000);
+                        } catch(e) {
+                            dateFin = new Date(data.dateFin);
+                        }
+                        
+                        if (dateFin < maintenant) {
+                            batch.delete(doc.ref);
+                            supprimes++;
+                            
+                            // Supprimer les notifications associées
+                            const notifsSnap = await db.collection('notifications')
+                                .where('communiqueId', '==', doc.id)
+                                .get();
+                            
+                            const notifBatch = db.batch();
+                            notifsSnap.forEach(d => notifBatch.delete(d.ref));
+                            await notifBatch.commit();
+                        }
+                    }
+                }
+                
+                if (supprimes > 0) {
+                    await batch.commit();
+                    console.log(`🗑️ ${supprimes} communiqué(s) expiré(s) supprimé(s)`);
+                    showToast(`🗑️ ${supprimes} communiqué(s) expiré(s) supprimé(s)`, 'info');
+                }
+            } catch(e) {
+                console.error('Erreur suppression:', e);
+            }
+        }
+        
+        window.supprimerTousExpires = async function() {
+            if (confirm('Supprimer définitivement tous les communiqués expirés ?')) {
+                await supprimerCommuniquesExpires();
+            }
+        };
+        
+        // ==================== CHARGEMENT PROMOTIONS ====================
+        async function chargerPromotions() {
+            try {
+                const snapshot = await db.collection('promotions').get();
+                allPromotions = [];
+                snapshot.forEach(doc => allPromotions.push({ id: doc.id, ...doc.data() }));
+                
+                const container = document.getElementById('promotionsCheckboxList');
+                if (container && allPromotions.length > 0) {
+                    let html = '';
+                    allPromotions.forEach(p => {
+                        html += `<div class="promotion-checkbox-item">
+                            <input type="checkbox" class="promotion-checkbox" value="${p.id}" id="promo_${p.id}">
+                            <label for="promo_${p.id}"><strong>${escapeHtml(p.nom)}</strong></label>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }
+                
+                // Gérer "Tout sélectionner"
+                document.getElementById('selectAllPromotions')?.addEventListener('change', (e) => {
+                    document.querySelectorAll('.promotion-checkbox').forEach(cb => cb.checked = e.target.checked);
+                });
+                
+            } catch(e) {
+                console.error('Erreur promotions:', e);
+            }
+        }
+        
+        // ==================== PUBLICATION ====================
+        document.getElementById('communiqueForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const titre = document.getElementById('titre').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const dateDebut = document.getElementById('dateDebut').value;
+            const dateFin = document.getElementById('dateFin').value;
+            
+            const selectedPromotions = [];
+            document.querySelectorAll('.promotion-checkbox:checked').forEach(cb => {
+                selectedPromotions.push(cb.value);
+            });
+            
+            // Validations
+            if (!titre) { showToast('Veuillez entrer un titre', 'warning'); return; }
+            if (!description) { showToast('Veuillez entrer une description', 'warning'); return; }
+            if (!dateDebut || !dateFin) { showToast('Veuillez sélectionner les dates', 'warning'); return; }
+            if (selectedPromotions.length === 0) { showToast('Sélectionnez au moins une promotion', 'warning'); return; }
+            
+            const debut = new Date(dateDebut + 'T00:00:00');
+            const fin = new Date(dateFin + 'T23:59:59');
+            
+            if (debut > fin) { showToast('La date de début doit être avant la date de fin', 'warning'); return; }
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Publication en cours...';
+            
+            try {
+                const communiqueId = Date.now().toString();
+                const communiqueData = {
+                    id: communiqueId,
+                    titre: titre,
+                    description: description,
+                    promotions: selectedPromotions,
+                    dateDebut: firebase.firestore.Timestamp.fromDate(debut),
+                    dateFin: firebase.firestore.Timestamp.fromDate(fin),
+                    dateCreation: firebase.firestore.FieldValue.serverTimestamp(),
+                    createur: currentUser.nomComplet || 'Administration',
+                    createurEmail: currentUser.email || '',
+                    active: true,
+                    notificationEnvoyee: false,
+                    notificationsEnvoyees: 0
+                };
+                
+                // Sauvegarder le communiqué
+                await db.collection('communiques').doc(communiqueId).set(communiqueData);
+                
+                // Envoyer les notifications
+                const nbNotifs = await envoyerNotificationPush(communiqueData);
+                
+                // Réinitialiser le formulaire
+                document.getElementById('communiqueForm').reset();
+                document.querySelectorAll('.promotion-checkbox').forEach(cb => cb.checked = false);
+                if (document.getElementById('selectAllPromotions')) {
+                    document.getElementById('selectAllPromotions').checked = false;
+                }
+                
+                // Redéfinir les dates par défaut
+                const aujourdhui = new Date().toISOString().split('T')[0];
+                const dans7Jours = new Date();
+                dans7Jours.setDate(dans7Jours.getDate() + 7);
+                document.getElementById('dateDebut').value = aujourdhui;
+                document.getElementById('dateFin').value = dans7Jours.toISOString().split('T')[0];
+                
+                showToast(`✅ Communiqué publié ! ${nbNotifs} notifications envoyées`, 'success');
+                
+            } catch (error) {
+                console.error('Erreur publication:', error);
+                showToast('❌ Erreur: ' + error.message, 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill"></i> Publier le communiqué';
+            }
+        });
+        
+        // ==================== AFFICHAGE EN TEMPS RÉEL ====================
+        function afficherCommuniques(communiques) {
+            const container = document.getElementById('communiquesList');
+            if (!container) return;
+            
+            tousCommuniques = communiques;
+            
+            // Mettre à jour les stats
+            const maintenant = new Date();
+            const actifs = communiques.filter(c => !c.estExpire);
+            const expires = communiques.filter(c => c.estExpire);
+            const notifies = communiques.filter(c => c.notificationEnvoyee);
+            
+            document.getElementById('statTotal').textContent = communiques.length;
+            document.getElementById('statActifs').textContent = actifs.length;
+            document.getElementById('statExpires').textContent = expires.length;
+            document.getElementById('statNotifies').textContent = notifies.length;
+            
+            if (communiques.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h5>Aucun communiqué</h5>
+                        <p class="text-muted">Publiez votre premier communiqué ci-dessus</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            communiques.forEach(data => {
+                const dateCreation = data.dateCreation ? formatDateTime(data.dateCreation) : '-';
+                const dateDebut = data.dateDebut ? formatDate(data.dateDebut) : '-';
+                const dateFin = data.dateFin ? formatDate(data.dateFin) : '-';
+                
+                const promotionNoms = [];
+                if (data.promotions && Array.isArray(data.promotions)) {
+                    data.promotions.forEach(pid => {
+                        const promo = allPromotions.find(p => p.id === pid);
+                        if (promo) promotionNoms.push(promo.nom);
+                        else promotionNoms.push(pid);
+                    });
+                }
+                
+                let statusClass = 'status-active';
+                let statusText = 'Actif';
+                
+                if (data.estExpire) {
+                    statusClass = 'status-expired';
+                    statusText = 'Expiré';
+                } else {
+                    const debut = data.dateDebut ? new Date(data.dateDebut) : null;
+                    if (debut && debut > new Date()) {
+                        statusClass = 'status-upcoming';
+                        statusText = 'À venir';
+                    }
+                }
+                
+                const cardClass = data.estExpire ? 'communique-card expired' : 'communique-card';
+                
+                html += `
+                    <div class="${cardClass}" data-id="${data.id}">
+                        <button class="btn-delete" onclick="supprimerCommunique('${data.id}')" title="Supprimer">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                        <div class="communique-title">📢 ${escapeHtml(data.titre)}</div>
+                        <div class="communique-date">
+                            <span><i class="bi bi-calendar-plus"></i> Publié: ${dateCreation}</span>
+                            <span><i class="bi bi-calendar-start"></i> Du: ${dateDebut}</span>
+                            <span><i class="bi bi-calendar-end"></i> Au: ${dateFin}</span>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                            ${data.notificationEnvoyee ? `<span class="status-badge status-notified"><i class="bi bi-bell-fill"></i> ${data.notificationsEnvoyees || 0} notif(s)</span>` : ''}
+                        </div>
+                        <div class="communique-description">
+                            ${escapeHtml(data.description).substring(0, 200)}${data.description && data.description.length > 200 ? '...' : ''}
+                        </div>
+                        <div class="communique-promotions">
+                            <i class="bi bi-people-fill"></i> 
+                            ${promotionNoms.length > 0 ? promotionNoms.map(nom => `<span class="promotion-badge">${escapeHtml(nom)}</span>`).join(' ') : 'Toutes les promotions'}
+                        </div>
+                        <div class="text-muted mt-2 small">
+                            <i class="bi bi-person-circle"></i> Par: ${escapeHtml(data.createur || 'Administration')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // ==================== FILTRE RECHERCHE ====================
+        window.filtrerCommuniques = function() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!query) {
+                afficherCommuniques(tousCommuniques);
+                return;
+            }
+            
+            const filtres = tousCommuniques.filter(c => 
+                c.titre.toLowerCase().includes(query) ||
+                c.description.toLowerCase().includes(query) ||
+                (c.createur && c.createur.toLowerCase().includes(query))
+            );
+            
+            afficherCommuniques(filtres);
+        };
+        
+        // ==================== SUPPRESSION ====================
+        window.supprimerCommunique = async function(id) {
+            if (!confirm('Supprimer définitivement ce communiqué ?')) return;
+            
+            try {
+                await db.collection('communiques').doc(id).delete();
+                
+                // Supprimer les notifications associées
+                const notifsSnap = await db.collection('notifications')
+                    .where('communiqueId', '==', id)
+                    .get();
+                
+                const batch = db.batch();
+                notifsSnap.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                
+                showToast('✅ Communiqué supprimé', 'success');
+            } catch(e) {
+                showToast('❌ Erreur: ' + e.message, 'danger');
+            }
+        };
+        
+        // ==================== ÉCOUTEUR TEMPS RÉEL ====================
+        function ecouterEnTempsReel() {
+            if (unsubscriber) unsubscriber();
+            
+            unsubscriber = db.collection('communiques')
+                .orderBy('dateCreation', 'desc')
+                .onSnapshot(async (snapshot) => {
+                    // Supprimer les expirés au passage
+                    await supprimerCommuniquesExpires();
+                    
+                    const maintenant = new Date();
+                    const communiques = [];
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        
+                        let dateFin = null;
+                        if (data.dateFin) {
+                            try {
+                                dateFin = data.dateFin.toDate ? data.dateFin.toDate() : new Date(data.dateFin.seconds * 1000);
+                            } catch(e) {}
+                        }
+                        
+                        let dateDebut = null;
+                        if (data.dateDebut) {
+                            try {
+                                dateDebut = data.dateDebut.toDate ? data.dateDebut.toDate() : new Date(data.dateDebut.seconds * 1000);
+                            } catch(e) {}
+                        }
+                        
+                        communiques.push({
+                            id: doc.id,
+                            ...data,
+                            dateDebut: dateDebut,
+                            dateFin: dateFin,
+                            estExpire: dateFin && dateFin < maintenant
+                        });
+                    });
+                    
+                    afficherCommuniques(communiques);
+                    
+                }, (error) => {
+                    console.error('Erreur listener:', error);
+                    document.getElementById('communiquesList').innerHTML = `
+                        <div class="empty-state">
+                            <i class="bi bi-exclamation-triangle-fill" style="color:#dc3545;"></i>
+                            <h5>Erreur</h5>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        // ==================== PROFIL ====================
+        document.getElementById('profileBtn').onclick = () => {
+            document.getElementById('profilNom').textContent = currentUser.nomComplet || 'Administrateur';
+            document.getElementById('profilEmail').textContent = currentUser.email || '';
+            document.getElementById('profilRole').textContent = 'Rôle: Académique';
+            document.getElementById('profileModal').style.display = 'flex';
+        };
+        
+        window.closeProfileModal = () => {
+            document.getElementById('profileModal').style.display = 'none';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+        };
+        
+        document.getElementById('profileModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProfileModal();
+        });
+        
+        document.getElementById('logoutBtn').onclick = () => {
+            if (confirm('Se déconnecter ?')) {
+                if (unsubscriber) unsubscriber();
+                localStorage.removeItem('session_academique');
+                window.location.href = 'index.html';
+            }
+        };
+        
+        document.getElementById('changePasswordBtn').onclick = async () => {
+            const np = document.getElementById('newPassword').value;
+            const cp = document.getElementById('confirmNewPassword').value;
+            if (!np || !cp) { showToast('Champs requis', 'warning'); return; }
+            if (np !== cp) { showToast('Mots de passe différents', 'warning'); return; }
+            if (np.length < 4) { showToast('Minimum 4 caractères', 'warning'); return; }
+            
+            try {
+                await db.collection('utilisateurs').doc(currentUser.id).update({ motDePasse: np });
+                showToast('✅ Mot de passe modifié', 'success');
+                closeProfileModal();
+            } catch(e) {
+                showToast('❌ Erreur: ' + e.message, 'danger');
+            }
+        };
+        
+        // ==================== RACCOURCIS ====================
+        document.getElementById('titre').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('description').focus();
+            }
+        });
+        
+        // ==================== INITIALISATION ====================
+        async function initialiser() {
+            console.log('🚀 Initialisation espace académique...');
+            
+            // Vérifier les notifications
+            await verifierSupportNotifications();
+            
+            // Charger les promotions
+            await chargerPromotions();
+            
+            // Supprimer les expirés
+            await supprimerCommuniquesExpires();
+            
+            // Écouter en temps réel
+            ecouterEnTempsReel();
+            
+            // Dates par défaut
+            const aujourdhui = new Date().toISOString().split('T')[0];
+            const dans7Jours = new Date();
+            dans7Jours.setDate(dans7Jours.getDate() + 7);
+            document.getElementById('dateDebut').value = aujourdhui;
+            document.getElementById('dateFin').value = dans7Jours.toISOString().split('T')[0];
+            
+            console.log('✅ Espace académique prêt');
+        }
+        
+        initialiser().catch(e => console.error('❌ Erreur:', e));
+    </script>
+</body>
+</html>

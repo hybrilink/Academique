@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Gestion des Pointeurs - Faculté Agronomique</title>
+    <meta name="theme-color" content="#003366">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-blue: #003366; --dark-blue: #002244; --accent-yellow: #ffb347; --success-green: #28a745; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+        
+        .navbar-custom { 
+            background: var(--primary-blue); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            padding: 10px 0;
+        }
+        
+        .btn-action { 
+            background: var(--primary-blue); 
+            color: white; 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 10px; 
+            transition: all 0.3s; 
+            font-weight: 600;
+        }
+        .btn-action:hover { background: var(--dark-blue); transform: translateY(-2px); }
+        .btn-action:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .btn-pause { 
+            background: #ff9800; 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-pause:hover { background: #e68900; }
+        
+        .btn-activate { 
+            background: var(--success-green); 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-activate:hover { background: #1e7e34; }
+        
+        .btn-home { 
+            background: var(--accent-yellow); 
+            color: var(--primary-blue); 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 10px; 
+            transition: all 0.3s; 
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-home:hover { background: #ff9800; transform: translateY(-2px); color: var(--primary-blue); }
+        
+        .card { 
+            border-radius: 20px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08); 
+            margin-bottom: 25px;
+        }
+        .card-header { 
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); 
+            color: white; 
+            border-radius: 20px 20px 0 0; 
+            padding: 18px 25px;
+            font-weight: 600;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+        
+        .pointeur-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .pointeur-table th, .pointeur-table td { 
+            padding: 14px 16px; 
+            text-align: left; 
+            border-bottom: 1px solid #e0e0e0; 
+        }
+        .pointeur-table th { 
+            background: var(--primary-blue); 
+            color: white; 
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .pointeur-table tr:hover { background: #f8f9fa; }
+        .pointeur-table tr:last-child td { border-bottom: none; }
+        
+        .badge-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-paused { background: #fff3cd; color: #856404; }
+        
+        .toast-notification { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 9999; 
+            min-width: 300px; 
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast { animation: slideInRight 0.3s ease-out; }
+        
+        .footer { 
+            background: #1a1a2e; 
+            color: #fff; 
+            text-align: center; 
+            padding: 15px 0; 
+            margin-top: auto; 
+            font-size: 14px; 
+        }
+        
+        .password-toggle {
+            cursor: pointer;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        @media (max-width: 768px) {
+            .form-section { padding: 20px; }
+            .pointeur-table { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <a class="navbar-brand text-white" href="#">
+                <i class="bi bi-person-badge-fill"></i> Gestion des Pointeurs - Faculté Agronomique
+            </a>
+            <span class="text-white-50">
+                <i class="bi bi-shield-lock"></i> Administration
+            </span>
+        </div>
+    </nav>
+    
+    <div class="container mt-4" style="flex: 1;">
+        <div id="toastContainer" class="toast-notification"></div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <h4><i class="bi bi-person-plus-fill me-2" style="color: var(--primary-blue);"></i>Création de Pointeurs</h4>
+            <a href="academique.html" class="btn-home">
+                <i class="bi bi-house-door-fill"></i> Accueil
+            </a>
+        </div>
+        
+        <!-- Formulaire de création -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-plus-circle-fill"></i> Nouveau Pointeur</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-section">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-person-fill"></i> Nom complet
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="nomComplet" placeholder="Ex: Jean Dupont">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-envelope-fill"></i> Email
+                            </label>
+                            <input type="email" class="form-control form-control-lg" id="email" placeholder="Ex: jean.dupont@unilu.ac.cd">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-lock-fill"></i> Mot de passe
+                            </label>
+                            <div class="position-relative">
+                                <input type="password" class="form-control form-control-lg" id="motDePasse" placeholder="Minimum 6 caractères">
+                                <i class="bi bi-eye-slash-fill password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-action btn-lg w-100" id="createPointeurBtn">
+                                <i class="bi bi-check-circle-fill"></i> Créer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Liste des pointeurs -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Pointeurs Enregistrés</h5>
+                <span class="badge bg-light text-dark" id="pointeurCount">0 pointeur(s)</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="pointeur-table">
+                        <thead>
+                            <tr>
+                                <th>N°</th>
+                                <th>Nom complet</th>
+                                <th>Email</th>
+                                <th>Statut</th>
+                                <th>Date création</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pointeursBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size: 40px;"></i>
+                                    <p class="mt-2">Aucun pointeur enregistré</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0">© 2024 HYBRILINK-TECH | Gestion des Pointeurs - Faculté Agronomique</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
+            authDomain: "fsa-unilu.firebaseapp.com",
+            projectId: "fsa-unilu",
+            storageBucket: "fsa-unilu.firebasestorage.app",
+            messagingSenderId: "36551990738",
+            appId: "1:36551990738:web:e91fdcb53f8aab5d1b7c0b"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        
+        // Vérification session
+        const session = localStorage.getItem('session_academique');
+        if (!session) {
+            window.location.href = 'login-academique.html';
+        }
+        const sessionData = JSON.parse(session);
+        if (Date.now() > sessionData.expires) {
+            localStorage.removeItem('session_academique');
+            window.location.href = 'login-academique.html';
+        }
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const bgColor = type === 'success' ? '#28a745' : (type === 'warning' ? '#ffc107' : '#dc3545');
+            const textColor = type === 'warning' ? '#333' : 'white';
+            const icon = type === 'success' ? 'check-circle-fill' : (type === 'warning' ? 'exclamation-triangle-fill' : 'x-circle-fill');
+            const toastHtml = `<div class="toast" style="background: ${bgColor}; color: ${textColor}; border-radius: 10px; margin-bottom: 10px;"><div class="toast-body"><i class="bi bi-${icon} me-2"></i>${message}</div></div>`;
+            container.insertAdjacentHTML('afterbegin', toastHtml);
+            setTimeout(() => { if(container.firstElementChild) container.firstElementChild.remove(); }, 4000);
+        }
+        
+        function escapeHtml(t) { 
+            if(!t) return ''; 
+            const d = document.createElement('div'); 
+            d.textContent = t; 
+            return d.innerHTML; 
+        }
+        
+        function togglePasswordVisibility() {
+            const input = document.getElementById('motDePasse');
+            const icon = document.getElementById('togglePassword');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-fill password-toggle';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye-slash-fill password-toggle';
+            }
+        }
+        
+        async function loadPointeurs() {
+            try {
+                const snapshot = await db.collection('pointeurs').orderBy('dateCreation', 'desc').get();
+                const tbody = document.getElementById('pointeursBody');
+                const countBadge = document.getElementById('pointeurCount');
+                
+                if (snapshot.empty) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox" style="font-size: 40px;"></i>
+                                <p class="mt-2">Aucun pointeur enregistré</p>
+                            </td>
+                        </tr>`;
+                    countBadge.textContent = '0 pointeur(s)';
+                    return;
+                }
+                
+                countBadge.textContent = `${snapshot.size} pointeur(s)`;
+                let html = '';
+                let index = 1;
+                
+                snapshot.forEach(doc => {
+                    const pointeur = { id: doc.id, ...doc.data() };
+                    const estActif = pointeur.statut === 'actif';
+                    const dateStr = pointeur.dateCreation?.toDate ? 
+                        new Date(pointeur.dateCreation.toDate()).toLocaleDateString('fr-FR') : 
+                        new Date(pointeur.dateCreation).toLocaleDateString('fr-FR');
+                    
+                    html += `
+                        <tr>
+                            <td>${index}</td>
+                            <td><strong>${escapeHtml(pointeur.nomComplet)}</strong></td>
+                            <td>${escapeHtml(pointeur.email)}</td>
+                            <td>
+                                <span class="badge-status ${estActif ? 'badge-active' : 'badge-paused'}">
+                                    <i class="bi bi-${estActif ? 'check-circle-fill' : 'pause-circle-fill'}"></i>
+                                    ${estActif ? 'Actif' : 'En pause'}
+                                </span>
+                            </td>
+                            <td>${dateStr}</td>
+                            <td>
+                                ${estActif ? 
+                                    `<button class="btn-pause" onclick="togglePointeurStatus('${doc.id}', false)" title="Mettre en pause">
+                                        <i class="bi bi-pause-circle-fill"></i> Pause
+                                    </button>` : 
+                                    `<button class="btn-activate" onclick="togglePointeurStatus('${doc.id}', true)" title="Activer">
+                                        <i class="bi bi-play-circle-fill"></i> Activer
+                                    </button>`
+                                }
+                            </td>
+                        </tr>
+                    `;
+                    index++;
+                });
+                
+                tbody.innerHTML = html;
+            } catch(err) {
+                console.error('Erreur chargement pointeurs:', err);
+                showToast('Erreur lors du chargement des pointeurs', 'danger');
+            }
+        }
+        
+        async function togglePointeurStatus(pointeurId, newStatus) {
+            try {
+                const statut = newStatus ? 'actif' : 'pause';
+                await db.collection('pointeurs').doc(pointeurId).update({ statut: statut });
+                showToast(`Pointeur ${newStatus ? 'activé' : 'mis en pause'} avec succès`, 'success');
+                await loadPointeurs();
+            } catch(err) {
+                console.error('Erreur mise à jour statut:', err);
+                showToast('Erreur lors de la mise à jour du statut', 'danger');
+            }
+        }
+        
+        async function createPointeur() {
+            const nomComplet = document.getElementById('nomComplet').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const motDePasse = document.getElementById('motDePasse').value.trim();
+            
+            if (!nomComplet || !email || !motDePasse) {
+                showToast('Veuillez remplir tous les champs', 'warning');
+                return;
+            }
+            
+            if (motDePasse.length < 6) {
+                showToast('Le mot de passe doit contenir au moins 6 caractères', 'warning');
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showToast('Veuillez entrer un email valide', 'warning');
+                return;
+            }
+            
+            const btn = document.getElementById('createPointeurBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Création...';
+            
+            try {
+                // Vérifier si l'email existe déjà
+                const existingQuery = await db.collection('pointeurs').where('email', '==', email).get();
+                if (!existingQuery.empty) {
+                    showToast('Un pointeur avec cet email existe déjà', 'warning');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Créer';
+                    return;
+                }
+                
+                const pointeurData = {
+                    nomComplet: nomComplet,
+                    email: email,
+                    motDePasse: motDePasse,
+                    statut: 'actif',
+                    dateCreation: firebase.firestore.FieldValue.serverTimestamp(),
+                    creePar: sessionData.nomComplet || 'Administrateur'
+                };
+                
+                await db.collection('pointeurs').add(pointeurData);
+                
+                showToast('Pointeur créé avec succès !', 'success');
+                
+                // Réinitialiser le formulaire
+                document.getElementById('nomComplet').value = '';
+                document.getElementById('email').value = '';
+                document.getElementById('motDePasse').value = '';
+                
+                await loadPointeurs();
+                
+            } catch(err) {
+                console.error('Erreur création pointeur:', err);
+                showToast('Erreur lors de la création du pointeur', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Créer';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('createPointeurBtn').addEventListener('click', createPointeur);
+            
+            // Permettre la création avec Entrée
+            document.getElementById('motDePasse').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') createPointeur();
+            });
+            
+            loadPointeurs();
+        });
+    </script>
+</body>
+</html>
