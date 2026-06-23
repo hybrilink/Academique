@@ -443,6 +443,13 @@
         
         console.log('✅ Dashboard académique chargé');
         console.log('Pages disponibles: bordereau.html, horaires.html, cours.html, communiquer.html, projet.html');
+ 
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+            });
+        }
+
     </script>
 </body>
 </html>
