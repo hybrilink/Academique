@@ -339,7 +339,6 @@
                 return false;
             }
             
-            // Vérifier le Service Worker
             const registration = await navigator.serviceWorker.getRegistration();
             if (registration) {
                 document.getElementById('notifInfo').style.background = '#d4edda';
@@ -356,55 +355,52 @@
         // ==================== NOTIFICATIONS PUSH ====================
         async function envoyerNotificationPush(communique) {
             try {
-                // 1. Récupérer tous les abonnements Push des étudiants concernés
-                const subscriptionsSnapshot = await db.collection('pushSubscriptions').get();
-                
                 let notificationsCrees = 0;
                 const batch = db.batch();
-                
-                for (const doc of subscriptionsSnapshot.docs) {
-                    const subscription = doc.data();
-                    
-                    // Vérifier si l'étudiant est dans une promotion concernée
-                    if (subscription.promotion && communique.promotions.includes(subscription.promotion)) {
-                        // Créer une notification dans Firestore
-                        const notifRef = db.collection('notifications').doc();
-                        batch.set(notifRef, {
-                            etudiantId: subscription.etudiantId,
-                            titre: '📢 ' + communique.titre,
-                            message: communique.description.substring(0, 150),
-                            description: communique.description,
-                            communiqueId: communique.id,
-                            promotions: communique.promotions,
-                            dateEnvoi: firebase.firestore.FieldValue.serverTimestamp(),
-                            lu: false,
-                            type: 'communique',
-                            url: 'communiquer.html?comm=' + communique.id
-                        });
-                        notificationsCrees++;
+
+                // Récupérer les tokens FCM des étudiants concernés
+                for (const promotionId of communique.promotions || []) {
+                    const studentsSnapshot = await db.collection('etudiants')
+                        .where('promotion', '==', promotionId)
+                        .get();
+
+                    const studentIds = [];
+                    studentsSnapshot.forEach(doc => studentIds.push(doc.id));
+
+                    for (const studentId of studentIds) {
+                        // Récupérer le token FCM
+                        const tokenDoc = await db.collection('fcmTokens').doc(studentId).get();
+                        if (tokenDoc.exists) {
+                            // Créer une notification dans Firestore
+                            const notifRef = db.collection('notifications').doc();
+                            batch.set(notifRef, {
+                                etudiantId: studentId,
+                                titre: '📢 ' + communique.titre,
+                                message: communique.description.substring(0, 150),
+                                description: communique.description,
+                                communiqueId: communique.id,
+                                promotions: [promotionId],
+                                dateEnvoi: firebase.firestore.FieldValue.serverTimestamp(),
+                                lu: false,
+                                type: 'communique',
+                                url: 'communiquer.html?communique=' + communique.id
+                            });
+                            notificationsCrees++;
+                        }
                     }
                 }
-                
+
                 await batch.commit();
-                
-                // 2. Déclencher le Service Worker pour vérification immédiate
-                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'CHECK_NOTIFICATIONS',
-                        urgent: true,
-                        communiqueId: communique.id
-                    });
-                }
-                
-                // 3. Mettre à jour le compteur dans le communiqué
+
+                // Mettre à jour le compteur dans le communiqué
                 await db.collection('communiques').doc(communique.id).update({
                     notificationsEnvoyees: notificationsCrees,
                     notificationEnvoyee: true
                 });
-                
+
                 console.log(`✅ ${notificationsCrees} notifications créées`);
                 return notificationsCrees;
-                
+
             } catch (error) {
                 console.error('❌ Erreur envoi notifications:', error);
                 return 0;
@@ -490,7 +486,7 @@
             }
         }
         
-        // ==================== PUBLICATION ====================
+        // ==================== PUBLICATION (CORRIGÉE) ====================
         document.getElementById('communiqueForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -520,9 +516,11 @@
             btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Publication en cours...';
             
             try {
-                const communiqueId = Date.now().toString();
+                // ✅ CRÉER UN NOUVEAU DOCUMENT AVEC UN ID FIRESTORE
+                const communiqueRef = db.collection('communiques').doc();
+                const communiqueId = communiqueRef.id;
+                
                 const communiqueData = {
-                    id: communiqueId,
                     titre: titre,
                     description: description,
                     promotions: selectedPromotions,
@@ -536,11 +534,14 @@
                     notificationsEnvoyees: 0
                 };
                 
-                // Sauvegarder le communiqué
-                await db.collection('communiques').doc(communiqueId).set(communiqueData);
+                // ✅ SAUVEGARDER AVEC LE BON ID
+                await communiqueRef.set(communiqueData);
                 
-                // Envoyer les notifications
-                const nbNotifs = await envoyerNotificationPush(communiqueData);
+                // ✅ ENVOYER LES NOTIFICATIONS
+                const nbNotifs = await envoyerNotificationPush({
+                    ...communiqueData,
+                    id: communiqueId
+                });
                 
                 // Réinitialiser le formulaire
                 document.getElementById('communiqueForm').reset();
