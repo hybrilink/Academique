@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Dashboard Académique - Faculté Agronomique</title>
-     <meta name="application-name" content="hybrilink Doyen">
+    <meta name="application-name" content="hybrilink Doyen">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="hybrilink Doyen">
@@ -14,7 +14,6 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <link rel="icon" type="image/png" href="icon-96x96.png">
-
     <link rel="manifest" href="manifest.json">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -28,17 +27,25 @@
             --dark-blue: #002244; 
             --accent-yellow: #ffb347; 
             --light-gray: #f0f2f5;
+            --success-green: #28a745;
+            --danger-red: #dc3545;
         }
         
         body { 
             background: var(--light-gray); 
             font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
         .navbar-custom { 
             background: var(--primary-blue); 
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
             padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
         
         .navbar-brand {
@@ -62,17 +69,8 @@
             font-size: 28px; 
             color: var(--primary-blue); 
         }
-        
-        .profile-photo:hover { 
-            transform: scale(1.05); 
-        }
-        
-        .navbar-right { 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            flex-wrap: wrap; 
-        }
+        .profile-photo:hover { transform: scale(1.05); }
+        .navbar-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         
         .user-info-card {
             background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
@@ -83,18 +81,8 @@
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
             position: relative;
         }
-        
-        .user-info-card h2 {
-            font-size: 1.5rem;
-            margin-bottom: 8px;
-        }
-        
-        .user-info-card p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-        
+        .user-info-card h2 { font-size: 1.5rem; margin-bottom: 8px; }
+        .user-info-card p { margin: 0; opacity: 0.9; font-size: 0.9rem; }
         .user-info-card .badge-role {
             background: var(--accent-yellow);
             color: var(--primary-blue);
@@ -105,7 +93,6 @@
             display: inline-block;
             margin-top: 10px;
         }
-        
         .user-info-card .info-icon {
             position: absolute;
             right: 25px;
@@ -121,7 +108,6 @@
             gap: 20px;
             margin-bottom: 40px;
         }
-        
         .menu-card {
             background: white;
             border-radius: 20px;
@@ -132,65 +118,247 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             border: 1px solid rgba(0,0,0,0.05);
         }
-        
         .menu-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 20px 30px rgba(0,0,0,0.15);
         }
+        .menu-icon { font-size: 50px; color: var(--primary-blue); margin-bottom: 15px; }
+        .menu-title { font-size: 16px; font-weight: 700; color: var(--primary-blue); margin-bottom: 5px; }
+        .menu-subtitle { font-size: 12px; color: #888; }
         
-        .menu-icon {
-            font-size: 50px;
+        .page-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .page-content.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .back-btn {
+            background: var(--accent-yellow);
             color: var(--primary-blue);
-            margin-bottom: 15px;
-        }
-        
-        .menu-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--primary-blue);
-            margin-bottom: 5px;
-        }
-        
-        .menu-subtitle {
-            font-size: 12px;
-            color: #888;
-        }
-        
-        .profile-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            z-index: 2000;
+            gap: 8px;
+            text-decoration: none;
+            cursor: pointer;
         }
+        .back-btn:hover { background: #ff9800; transform: translateY(-2px); color: var(--primary-blue); }
         
-        .profile-modal-content {
+        .content-card {
             background: white;
             border-radius: 20px;
             padding: 30px;
-            max-width: 400px;
-            width: 90%;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 18px 25px;
+            font-weight: 600;
+            margin: -30px -30px 25px -30px;
+        }
+        .card-header-custom h5 { margin: 0; }
+        .card-header-custom h5 i { color: var(--accent-yellow); }
+        
+        .form-label { font-weight: 600; color: var(--primary-blue); margin-bottom: 8px; }
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(0,51,102,0.25);
         }
         
         .btn-action {
             background: var(--primary-blue);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border-radius: 10px;
-            cursor: pointer;
             transition: all 0.3s;
+            font-weight: 600;
         }
-        
-        .btn-action:hover {
+        .btn-action:hover:not(:disabled) {
             background: var(--dark-blue);
             transform: translateY(-2px);
         }
+        .btn-action:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .btn-success-action {
+            background: var(--success-green);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .btn-success-action:hover { background: #218838; transform: translateY(-2px); }
+        
+        .btn-warning-action {
+            background: var(--accent-yellow);
+            color: var(--primary-blue);
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .btn-warning-action:hover { background: #ff9800; transform: translateY(-2px); }
+        
+        .btn-danger-action {
+            background: var(--danger-red);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-danger-action:hover { background: #c82333; transform: translateY(-2px); }
+        
+        .seance-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-blue);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .seance-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .seance-active { border-left-color: var(--success-green); background: #f0fff4; }
+        .seance-expired { border-left-color: var(--danger-red); background: #fff5f5; opacity: 0.7; }
+        .seance-upcoming { border-left-color: #ff9800; background: #fff8f0; }
+        
+        .badge-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-expired { background: #f8d7da; color: #721c24; }
+        .badge-upcoming { background: #fff3cd; color: #856404; }
+        .badge-credit { background: #e8f4fd; color: var(--primary-blue); }
+        .badge-promo { background: #fff3cd; color: #856404; }
+        .badge-prof { background: #e8f5e9; color: #2e7d32; }
+        
+        .cours-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary-blue);
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .cours-item:hover { background: #e9ecef; transform: translateX(3px); }
+        .cours-info { flex: 1; min-width: 200px; }
+        .cours-nom { font-weight: bold; color: var(--primary-blue); font-size: 16px; }
+        .cours-details { font-size: 13px; color: #666; margin-top: 3px; }
+        .cours-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 5px; }
+        
+        .communique-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-blue);
+            transition: all 0.3s;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .communique-card:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .communique-card.expired { opacity: 0.5; border-left-color: #999; background: #f5f5f5; }
+        .communique-title { font-size: 18px; font-weight: bold; color: var(--primary-blue); margin-bottom: 10px; padding-right: 40px; }
+        .communique-date { font-size: 12px; color: #888; margin-bottom: 10px; display: flex; gap: 15px; flex-wrap: wrap; }
+        .communique-description { margin: 10px 0; line-height: 1.6; font-size: 14px; color: #555; }
+        .promotion-badge {
+            display: inline-block;
+            background: #e8f4fd;
+            color: var(--primary-blue);
+            padding: 3px 10px;
+            border-radius: 15px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--danger-red);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        .btn-delete:hover { color: #a71d2a; transform: scale(1.2); }
+        
+        .promotions-checkbox-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .promotion-checkbox-item { margin-bottom: 10px; padding: 8px; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; }
+        .promotion-checkbox-item:hover { background: #e8f4fd; }
+        .promotion-checkbox-item input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        .checkbox-select-all { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #dee2e6; font-weight: bold; }
+        
+        .date-range { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .stat-card .stat-number { font-size: 32px; font-weight: bold; color: var(--primary-blue); }
+        .stat-card .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
+        
+        .empty-state { text-align: center; padding: 50px 20px; color: #888; }
+        .empty-state i { font-size: 60px; color: #ccc; margin-bottom: 20px; }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
         .toast-notification {
             position: fixed;
@@ -199,13 +367,58 @@
             z-index: 9999;
             min-width: 300px;
         }
-        
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        
         .toast { animation: slideInRight 0.3s ease-out; }
+        
+        .profile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .profile-modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .info-alert {
+            background: #e8f4fd;
+            border-left: 4px solid var(--primary-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .info-alert i { color: var(--primary-blue); font-size: 18px; }
+        .notification-info {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #155724;
+        }
+        .notification-info i { font-size: 20px; }
+        
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box input { padding-left: 40px; }
+        .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
         
         .footer-info {
             text-align: center;
@@ -215,10 +428,198 @@
             font-size: 12px;
             color: #888;
         }
+        .footer-info img { border-radius: 20px; vertical-align: middle; }
         
-        .footer-info img {
+        /* Styles HORAIRES */
+        .semaine-selector {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 2px solid #e0e0e0;
+        }
+        .semaine-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .semaine-badge {
+            background: var(--primary-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .jours-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px; margin-bottom: 20px;
+        }
+        .jour-btn {
+            background: #f8f9fa; border: 2px solid #dee2e6;
+            border-radius: 12px; padding: 12px 8px;
+            text-align: center; cursor: pointer;
+            transition: all 0.3s; font-weight: 600;
+            font-size: 14px; color: #555;
+        }
+        .jour-btn:hover { background: #e9ecef; transform: translateY(-2px); }
+        .jour-btn.selected { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+        .jour-btn i { display: block; font-size: 20px; margin-bottom: 5px; }
+        
+        .panier-container {
+            background: #f8f9fa; border-radius: 15px;
+            padding: 20px; margin-bottom: 20px;
+            border: 2px dashed #dee2e6; min-height: 100px;
+        }
+        .panier-item {
+            background: white; border-radius: 10px;
+            padding: 15px; margin-bottom: 10px;
+            border-left: 4px solid var(--primary-blue);
+            display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 10px;
+            transition: all 0.3s;
+        }
+        .panier-item:hover { transform: translateX(3px); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .panier-jour-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: white; }
+        .panier-jour-badge.Lundi { background: #1565c0; }
+        .panier-jour-badge.Mardi { background: #c62828; }
+        .panier-jour-badge.Mercredi { background: #6a1b9a; }
+        .panier-jour-badge.Jeudi { background: #2e7d32; }
+        .panier-jour-badge.Vendredi { background: #e65100; }
+        .panier-jour-badge.Samedi { background: #283593; }
+        
+        .btn-remove-panier {
+            background: var(--danger-red); color: white;
+            border: none; width: 35px; height: 35px;
+            border-radius: 50%; cursor: pointer;
+            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-remove-panier:hover { background: #c82333; transform: scale(1.1); }
+        
+        .btn-add-panier {
+            background: var(--success-green); color: white;
+            border: none; padding: 10px 20px; border-radius: 10px;
+            cursor: pointer; transition: all 0.3s;
+            font-weight: 600; font-size: 14px;
+        }
+        .btn-add-panier:hover { background: #218838; transform: translateY(-2px); }
+        .btn-add-panier:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .creneaux-occupes {
+            background: #f0f4f8;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .creneau-tag {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin: 2px;
+            font-size: 11px;
+        }
+        .horaires-table {
+            width: 100%; border-collapse: collapse;
+            background: white; border-radius: 15px;
+            overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .horaires-table thead th {
+            background: var(--primary-blue); color: white;
+            padding: 14px 15px; text-align: left;
+            font-weight: 600; font-size: 14px;
+        }
+        .horaires-table tbody td {
+            padding: 14px 15px; border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle; font-size: 14px;
+        }
+        .horaires-table tbody tr:hover { background: #f8f9fa; }
+        .badge-jour { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: white; }
+        .badge-jour.Lundi { background: #1565c0; }
+        .badge-jour.Mardi { background: #c62828; }
+        .badge-jour.Mercredi { background: #6a1b9a; }
+        .badge-jour.Jeudi { background: #2e7d32; }
+        .badge-jour.Vendredi { background: #e65100; }
+        .badge-jour.Samedi { background: #283593; }
+        .badge-expire { background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 15px; font-size: 11px; }
+        .badge-semaine { background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 15px; font-size: 11px; }
+        .sync-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
+        .sync-badge.online { background: var(--success-green); color: white; }
+        .conflit-alert {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #856404;
+        }
+        .conflit-alert.show { display: flex; }
+        .conflit-alert i { font-size: 20px; color: #e65100; }
+        
+        /* Styles PROJETS */
+        .professor-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .professor-checkbox-item:hover {
+            border-color: var(--primary-blue);
+            background: #f8f9fa;
+        }
+        .professor-checkbox-item.selected {
+            border-color: var(--primary-blue);
+            background: #e3f2fd;
+        }
+        .professor-checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .professor-info { flex: 1; }
+        .professor-name { font-weight: 600; color: var(--primary-blue); }
+        .professor-details { font-size: 0.85rem; color: #888; }
+        .student-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary-blue);
+        }
+        .student-card .student-name { font-weight: 600; color: var(--primary-blue); }
+        .student-card .student-info { font-size: 0.85rem; color: #666; }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loading-overlay.show { display: flex; }
+        .loading-spinner-box {
+            background: white;
+            padding: 30px;
             border-radius: 20px;
-            vertical-align: middle;
+            text-align: center;
         }
         
         @media (max-width: 768px) {
@@ -226,10 +627,18 @@
             .menu-card { padding: 18px 12px; }
             .menu-icon { font-size: 35px; }
             .menu-title { font-size: 13px; }
+            .content-card { padding: 20px; }
+            .date-range { grid-template-columns: 1fr; }
+            .card-header-custom { margin: -20px -20px 20px -20px; padding: 15px 20px; }
+            .cours-item { flex-direction: column; align-items: flex-start; }
+            .communique-title { font-size: 16px; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .jours-grid { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
 <body>
+    <!-- Navbar -->
     <nav class="navbar navbar-custom">
         <div class="container">
             <a class="navbar-brand text-white" href="#">
@@ -246,11 +655,11 @@
         </div>
     </nav>
     
-    <div class="container mt-4">
+    <div class="container mt-4" style="flex: 1;">
         <div id="toastContainer" class="toast-notification"></div>
         
-        <div id="homePage">
-            <!-- Carte d'information utilisateur -->
+        <!-- ==================== PAGE ACCUEIL ==================== -->
+        <div id="page-home" class="page-content active">
             <div class="user-info-card">
                 <div>
                     <h2 id="welcomeName">Bienvenue, Professeur</h2>
@@ -259,12 +668,9 @@
                         <i class="bi bi-check-circle-fill"></i> Compte Académique
                     </span>
                 </div>
-                <div class="info-icon">
-                    <i class="bi bi-book-fill"></i>
-                </div>
+                <div class="info-icon"><i class="bi bi-book-fill"></i></div>
             </div>
             
-            <!-- Grille des cartes boutons -->
             <div class="menu-grid">
                 <div class="menu-card" data-page="bordereau">
                     <div class="menu-icon"><i class="bi bi-qr-code-scan"></i></div>
@@ -291,49 +697,472 @@
                     <div class="menu-title">Attribution Projet</div>
                     <div class="menu-subtitle">Directeur de projet</div>
                 </div>
-<div class="menu-card" data-page="examen">
-    <div class="menu-icon"><i class="bi bi-clipboard-check-fill"></i></div>
-    <div class="menu-title">Création Séance Examen</div>
-    <div class="menu-subtitle">Planifier les examens</div>
-</div>
-<div class="menu-card" data-page="pointeurs">
-    <div class="menu-icon"><i class="bi bi-person-badge-fill"></i></div>
-    <div class="menu-title">Création Pointeurs</div>
-    <div class="menu-subtitle">Gérer les surveillants</div>
-</div>
-            </div>
-
-        </div>
-    </div>
-    
-    <!-- Modal Profil -->
-    <div id="profileModal" style="display:none;">
-        <div class="profile-modal">
-            <div class="profile-modal-content">
-                <div class="text-center">
-                    <i class="bi bi-person-circle" style="font-size:70px; color: var(--primary-blue);"></i>
-                    <h4 id="profilNom"></h4>
-                    <p id="profilEmail"></p>
-                    <p id="profilRole"></p>
-                    <hr>
-                    <h6>Changer mot de passe</h6>
-                    <input type="password" class="form-control mb-2" id="newPassword" placeholder="Nouveau mot de passe">
-                    <input type="password" class="form-control mb-2" id="confirmNewPassword" placeholder="Confirmer">
-                    <button class="btn-action w-100" id="changePasswordBtn">Modifier</button>
-                    <button class="btn btn-secondary w-100 mt-2" onclick="closeProfileModal()">Fermer</button>
+                <div class="menu-card" data-page="examen">
+                    <div class="menu-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+                    <div class="menu-title">Création Séance Examen</div>
+                    <div class="menu-subtitle">Planifier les examens</div>
+                </div>
+                <div class="menu-card" data-page="pointeurs">
+                    <div class="menu-icon"><i class="bi bi-person-badge-fill"></i></div>
+                    <div class="menu-title">Création Pointeurs</div>
+                    <div class="menu-subtitle">Gérer les surveillants</div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="container">
+        
+        <!-- ==================== PAGE COURS ==================== -->
+        <div id="page-cours" class="page-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h4><i class="bi bi-book-fill me-2" style="color: var(--primary-blue);"></i>Publication des Cours</h4>
+                <button class="back-btn" onclick="showPage('home')">
+                    <i class="bi bi-house-door-fill"></i> Accueil
+                </button>
+            </div>
+            
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <h5><i class="bi bi-journal-plus"></i> Publier un nouveau cours</h5>
+                </div>
+                <div class="info-alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>Information :</strong> Remplissez tous les champs pour créer un nouveau cours.
+                </div>
+                <form id="coursForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="bi bi-pencil-fill"></i> Nom du cours</label>
+                            <input type="text" class="form-control" id="coursNom" required placeholder="Ex: Agronomie Générale">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="bi bi-star-fill"></i> Crédits</label>
+                            <input type="number" class="form-control" id="coursCredit" required min="1" max="10" placeholder="3">
+                            <small class="text-muted">Entre 1 et 10 crédits</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="bi bi-person-workspace"></i> Professeur</label>
+                            <select class="form-select" id="coursProfesseur" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="bi bi-trophy-fill"></i> Promotion</label>
+                            <select class="form-select" id="coursPromotion" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-action w-100" id="coursSubmitBtn">
+                        <i class="bi bi-cloud-upload-fill"></i> Publier le cours
+                    </button>
+                </form>
+            </div>
+            
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 style="color: var(--primary-blue); margin: 0;"><i class="bi bi-list-ul"></i> Cours publiés</h5>
+                    <button class="btn btn-sm btn-outline-secondary" id="coursRefreshBtn">
+                        <i class="bi bi-arrow-repeat"></i> Actualiser
+                    </button>
+                </div>
+                <div id="coursListe">
+                    <div class="text-center py-4">
+                        <div class="loading-spinner" style="border-color:#e0e0e0;border-top-color:var(--primary-blue);width:30px;height:30px;"></div>
+                        <p class="mt-2 text-muted">Chargement...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PAGE EXAMEN ==================== -->
+        <div id="page-examen" class="page-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h4><i class="bi bi-clipboard-check-fill me-2" style="color: var(--primary-blue);"></i>Séances d'Examen</h4>
+                <button class="back-btn" onclick="showPage('home')">
+                    <i class="bi bi-house-door-fill"></i> Accueil
+                </button>
+            </div>
+            
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <h5><i class="bi bi-plus-circle-fill"></i> Nouvelle Séance</h5>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <label class="form-label"><i class="bi bi-calendar-event-fill"></i> Date début</label>
+                        <input type="datetime-local" class="form-control" id="examenDateDebut" min="">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label"><i class="bi bi-calendar-x-fill"></i> Date fin</label>
+                        <input type="datetime-local" class="form-control" id="examenDateFin" min="">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn-action w-100" id="examenCreateBtn">
+                            <i class="bi bi-check-circle-fill"></i> Créer
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle-fill"></i>
+                        La séance sera active entre ces deux dates.
+                    </small>
+                </div>
+            </div>
+            
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 style="color: var(--primary-blue); margin: 0;"><i class="bi bi-list-check"></i> Séances programmées</h5>
+                    <span class="badge bg-light text-dark" id="examenCount">0</span>
+                </div>
+                <div id="examenListe">
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox" style="font-size:48px;"></i>
+                        <p class="mt-2">Aucune séance programmée</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PAGE COMMUNIQUER ==================== -->
+        <div id="page-communiquer" class="page-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h4><i class="bi bi-megaphone-fill me-2" style="color: var(--primary-blue);"></i>Communication</h4>
+                <button class="back-btn" onclick="showPage('home')">
+                    <i class="bi bi-house-door-fill"></i> Accueil
+                </button>
+            </div>
+            
+            <div class="notification-info" id="notifInfo">
+                <i class="bi bi-info-circle-fill"></i>
+                <span id="notifInfoText">Vérification du service de notifications...</span>
+            </div>
+            
+            <div class="stats-row" id="comStats">
+                <div class="stat-card"><div class="stat-number" id="comStatTotal">0</div><div class="stat-label">Total</div></div>
+                <div class="stat-card"><div class="stat-number" id="comStatActifs">0</div><div class="stat-label">Actifs</div></div>
+                <div class="stat-card"><div class="stat-number" id="comStatExpires">0</div><div class="stat-label">Expirés</div></div>
+                <div class="stat-card"><div class="stat-number" id="comStatNotifies">0</div><div class="stat-label">Notifications</div></div>
+            </div>
+            
+            <div class="content-card">
+                <h5 class="mb-4"><i class="bi bi-pencil-square"></i> Nouveau communiqué</h5>
+                <form id="communiqueForm">
+                    <div class="form-group mb-3">
+                        <label class="form-label"><i class="bi bi-tag-fill"></i> Titre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="comTitre" required placeholder="Ex: Report du cours">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label"><i class="bi bi-file-text-fill"></i> Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="comDescription" rows="5" required placeholder="Contenu détaillé..."></textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label"><i class="bi bi-diagram-3"></i> Promotions concernées <span class="text-danger">*</span></label>
+                        <div class="promotions-checkbox-group">
+                            <div class="checkbox-select-all">
+                                <input type="checkbox" id="comSelectAll">
+                                <label for="comSelectAll"><strong>Tout sélectionner</strong></label>
+                            </div>
+                            <div id="comPromotionsList">Chargement...</div>
+                        </div>
+                    </div>
+                    <div class="date-range">
+                        <div class="form-group mb-3">
+                            <label class="form-label"><i class="bi bi-calendar-start"></i> Date début <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="comDateDebut" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label"><i class="bi bi-calendar-end"></i> Date fin <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="comDateFin" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-action w-100" id="comSubmitBtn">
+                        <i class="bi bi-send-fill"></i> Publier
+                    </button>
+                </form>
+            </div>
+            
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 style="color: var(--primary-blue); margin: 0;"><i class="bi bi-clock-history"></i> Communiqués</h5>
+                    <button class="btn-danger-action" onclick="supprimerTousExpires()">
+                        <i class="bi bi-trash"></i> Supprimer expirés
+                    </button>
+                </div>
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control" id="comSearchInput" placeholder="Rechercher..." oninput="filtrerCommuniques()">
+                </div>
+                <div id="comListe">
+                    <div class="text-center py-4">
+                        <div class="loading-spinner" style="border-color:#e0e0e0;border-top-color:var(--primary-blue);width:30px;height:30px;"></div>
+                        <p class="mt-2 text-muted">Chargement...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PAGE HORAIRES ==================== -->
+        <div id="page-horaires" class="page-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h4><i class="bi bi-calendar-week-fill me-2" style="color: var(--primary-blue);"></i>Publication des Horaires</h4>
+                <button class="back-btn" onclick="showPage('home')">
+                    <i class="bi bi-house-door-fill"></i> Accueil
+                </button>
+            </div>
+            
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <h5><i class="bi bi-calendar-week-fill"></i> Publier un horaire</h5>
+                </div>
+                
+                <div class="info-alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>Fonctionnement :</strong> Sélectionnez la semaine, la promotion et le cours. Pour chaque jour, définissez les horaires et la salle, puis ajoutez au panier. <strong>Le système vérifie uniquement les conflits de créneaux horaires</strong> (même jour, mêmes heures qui se chevauchent).
+                </div>
+                
+                <!-- Sélecteur de semaine -->
+                <div class="semaine-selector">
+                    <label class="form-label"><i class="bi bi-calendar-range"></i> Semaine concernée</label>
+                    <div class="row align-items-end">
+                        <div class="col-md-6 mb-3">
+                            <select class="form-select" id="semaineSelect">
+                                <option value="">-- Sélectionner une semaine --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="semaine-info" id="semaineInfo" style="display:none;">
+                                <span class="semaine-badge" id="semaineBadge"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><i class="bi bi-trophy-fill"></i> Promotion concernée</label>
+                        <select class="form-select" id="promotionHoraire" required>
+                            <option value="">-- Sélectionner une promotion --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><i class="bi bi-book-fill"></i> Cours</label>
+                        <select class="form-select" id="coursHoraire" required>
+                            <option value="">-- Sélectionner d'abord une promotion --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Alerte conflit -->
+                <div class="conflit-alert" id="conflitAlert">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span id="conflitMessage"></span>
+                </div>
+                
+                <!-- Sélection du jour -->
+                <label class="form-label"><i class="bi bi-calendar-day"></i> Sélectionnez un jour</label>
+                <div class="jours-grid" id="joursGrid">
+                    <div class="jour-btn" data-jour="Lundi"><i class="bi bi-sun-fill"></i> Lundi</div>
+                    <div class="jour-btn" data-jour="Mardi"><i class="bi bi-sun-fill"></i> Mardi</div>
+                    <div class="jour-btn" data-jour="Mercredi"><i class="bi bi-cloud-sun-fill"></i> Mercredi</div>
+                    <div class="jour-btn" data-jour="Jeudi"><i class="bi bi-sun-fill"></i> Jeudi</div>
+                    <div class="jour-btn" data-jour="Vendredi"><i class="bi bi-sun-fill"></i> Vendredi</div>
+                    <div class="jour-btn" data-jour="Samedi"><i class="bi bi-cloud-fill"></i> Samedi</div>
+                </div>
+                
+                <!-- Créneaux déjà occupés -->
+                <div class="creneaux-occupes" id="creneauxOccupes" style="display:none;">
+                    <strong><i class="bi bi-info-circle"></i> Créneaux déjà occupés ce jour :</strong>
+                    <div id="creneauxList"></div>
+                </div>
+                
+                <!-- Détails du jour -->
+                <div id="jourDetail" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="bi bi-clock-fill"></i> Heure début</label>
+                            <input type="time" class="form-control" id="heureDebut" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="bi bi-clock-fill"></i> Heure fin</label>
+                            <input type="time" class="form-control" id="heureFin" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="bi bi-geo-alt-fill"></i> Salle / Local</label>
+                            <input type="text" class="form-control" id="salleHoraire" placeholder="Ex: Salle 101, Labo...">
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add-panier" id="addPanierBtn">
+                        <i class="bi bi-cart-plus-fill"></i> Ajouter au panier
+                    </button>
+                </div>
+                
+                <!-- Panier -->
+                <div class="panier-container mt-4">
+                    <h6><i class="bi bi-cart-fill"></i> Panier d'horaires <span class="badge bg-secondary" id="panierCount">0</span></h6>
+                    <div id="panierList">
+                        <div class="panier-empty">
+                            <i class="bi bi-cart-x"></i>
+                            <p>Aucun horaire dans le panier</p>
+                            <small class="text-muted">Ajoutez des créneaux pour les voir apparaître ici</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn-action w-100" id="publishAllBtn" disabled>
+                    <i class="bi bi-cloud-upload-fill"></i> Publier tout (<span id="publishCount">0</span> créneaux)
+                </button>
+            </div>
+            
+            <!-- Liste des horaires -->
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 style="color:var(--primary-blue);margin:0;"><i class="bi bi-list-ul"></i> Horaires publiés</h5>
+                    <span class="sync-badge online" id="syncBadge"><i class="bi bi-circle-fill" style="font-size:8px;"></i> Temps réel</span>
+                </div>
+                <div id="horairesContainer">
+                    <div class="text-center py-5">
+                        <div class="loading-spinner" style="border-color:#e0e0e0;border-top-color:var(--primary-blue);width:40px;height:40px;"></div>
+                        <p class="mt-3 text-muted">Chargement...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PAGE PROJET ==================== -->
+        <div id="page-projet" class="page-content">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h4><i class="bi bi-diagram-3-fill me-2" style="color: var(--primary-blue);"></i>Attribution des Projets</h4>
+                <button class="back-btn" onclick="showPage('home')">
+                    <i class="bi bi-house-door-fill"></i> Accueil
+                </button>
+            </div>
+            
+            <div id="projetContent">
+                <!-- Assignation automatique -->
+                <div class="content-card">
+                    <h5><i class="bi bi-people-fill me-2"></i>Assignation Automatique des Directeurs</h5>
+                    <p class="text-muted">Sélectionnez les professeurs qui seront directeurs de projet. Les étudiants sans directeur seront répartis automatiquement.</p>
+                    
+                    <div class="info-alert">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <strong>Fonctionnement :</strong> Les étudiants sans directeur seront répartis équitablement entre les professeurs sélectionnés.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-person-badge-fill me-1"></i> Professeurs disponibles</label>
+                        <div id="professorsCheckboxList">
+                            <p class="text-muted">Chargement des professeurs...</p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-success-action w-100" id="btnAutoAssign">
+                        <i class="bi bi-magic me-2"></i> Valider l'assignation automatique
+                    </button>
+                </div>
+                
+                <!-- Changer un directeur -->
+                <div class="content-card">
+                    <h5><i class="bi bi-arrow-left-right me-2"></i>Changer le Directeur d'un Étudiant</h5>
+                    <p class="text-muted">Modifiez manuellement l'assignation d'un directeur pour un étudiant spécifique.</p>
+                    
+                    <form id="changeDirectorForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="matriculeEtudiant" class="form-label">
+                                    <i class="bi bi-search me-1"></i> Matricule de l'étudiant
+                                </label>
+                                <div class="search-box">
+                                    <input type="text" class="form-control" id="matriculeEtudiant" 
+                                           placeholder="Entrez le matricule..." required>
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <div id="studentPreview" class="mt-2"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="nouveauDirecteur" class="form-label">
+                                    <i class="bi bi-person-check-fill me-1"></i> Nouveau directeur
+                                </label>
+                                <select class="form-select" id="nouveauDirecteur" required>
+                                    <option value="">-- Sélectionnez un professeur --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-warning-action w-100" id="btnChangeDirector">
+                            <i class="bi bi-check-circle me-2"></i> Valider le changement
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PAGES EXTERNES ==================== -->
+        <div id="page-bordereau" class="page-content">
+            <div class="text-center py-5">
+                <i class="bi bi-qr-code-scan" style="font-size:80px;color:var(--primary-blue);"></i>
+                <h4 class="mt-3">Enregistrement Bordereau</h4>
+                <p class="text-muted">Redirection vers la page dédiée...</p>
+                <a href="bordereau.html" class="btn-action mt-3">
+                    <i class="bi bi-box-arrow-up-right"></i> Ouvrir bordereau.html
+                </a>
+                <button class="back-btn mt-3" onclick="showPage('home')">
+                    <i class="bi bi-house-door-fill"></i> Retour
+                </button>
+            </div>
+        </div>
+        
+        <div id="page-pointeurs" class="page-content">
+            <div class="text-center py-5">
+                <i class="bi bi-person-badge-fill" style="font-size:80px;color:var(--primary-blue);"></i>
+                <h4 class="mt-3">Création Pointeurs</h4>
+                <p class="text-muted">Redirection vers la page dédiée...</p>
+                <a href="pointeurs.html" class="btn-action mt-3">
+                    <i class="bi bi-box-arrow-up-right"></i> Ouvrir pointeurs.html
+                </a>
+                <button class="back-btn mt-3" onclick="showPage('home')">
+                    <i class="bi bi-house-door-fill"></i> Retour
+                </button>
+            </div>
+        </div>
+        
+        <!-- Footer -->
         <div class="footer-info">
             <i class="bi bi-shield-check"></i> HYBRILINK-TECH - Votre partenaire digital de A à Z<br>
             <img src="t.png" width="40px" alt="HYBRILINK" onerror="this.style.display='none'">
         </div>
     </div>
-
+    
+    <!-- Modal Profil -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-modal-content">
+            <div class="text-center">
+                <i class="bi bi-person-circle" style="font-size:70px;color:var(--primary-blue);"></i>
+                <h4 id="profilNom"></h4>
+                <p id="profilEmail"></p>
+                <p id="profilRole"></p>
+                <hr>
+                <h6>Changer mot de passe</h6>
+                <input type="password" class="form-control mb-2" id="newPassword" placeholder="Nouveau mot de passe">
+                <input type="password" class="form-control mb-2" id="confirmNewPassword" placeholder="Confirmer">
+                <button class="btn-action w-100" id="changePasswordBtn">Modifier</button>
+                <button class="btn btn-secondary w-100 mt-2" onclick="closeProfileModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner-box">
+            <div class="loading-spinner" style="width:50px;height:50px;border-width:5px;border-color:#e0e0e0;border-top-color:var(--primary-blue);margin:0 auto 15px;"></div>
+            <p class="mb-0" id="loadingText">Traitement en cours...</p>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ==================== CONFIGURATION ====================
         const firebaseConfig = {
             apiKey: "AIzaSyBb82N2-5ns7qKjQBAj5UvDW87s2PZ27F0",
             authDomain: "fsa-unilu.firebaseapp.com",
@@ -348,108 +1177,1272 @@
         }
         const db = firebase.firestore();
         
+        // ==================== VARIABLES GLOBALES ====================
         let currentUser = null;
+        let allProfesseurs = [];
+        let allPromotions = [];
+        let allCours = [];
+        let allSeances = [];
+        let allCommuniques = [];
+        let allHoraires = [];
+        let allStudents = [];
+        let allProjects = [];
         
-        // Vérification session
-        const session = localStorage.getItem('session_academique');
-        if (!session) {
-            window.location.href = 'login-academique.html';
-        }
-        const sessionData = JSON.parse(session);
-        if (Date.now() > sessionData.expires) {
-            localStorage.removeItem('session_academique');
-            window.location.href = 'login-academique.html';
-        }
-        currentUser = sessionData;
+        let comUnsubscriber = null;
+        let seanceUnsubscriber = null;
+        let horairesUnsubscriber = null;
         
+        let selectedSemaineId = '';
+        let panier = [];
+        let semainesDisponibles = [];
+        let selectedJour = '';
+        
+        // ==================== SESSION ====================
+        (function initSession() {
+            const session = localStorage.getItem('session_academique');
+            if (!session) { window.location.href = 'login-academique.html'; return; }
+            try {
+                const data = JSON.parse(session);
+                if (Date.now() > data.expires) {
+                    localStorage.removeItem('session_academique');
+                    window.location.href = 'login-academique.html';
+                    return;
+                }
+                currentUser = data;
+            } catch(e) {
+                localStorage.removeItem('session_academique');
+                window.location.href = 'login-academique.html';
+            }
+        })();
+        
+        // ==================== UTILITAIRES ====================
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
-            const bgColor = type === 'success' ? '#28a745' : (type === 'warning' ? '#ffc107' : '#dc3545');
+            const colors = { success: '#28a745', warning: '#ffc107', danger: '#dc3545', info: '#17a2b8' };
+            const icons = { success: 'check-circle-fill', warning: 'exclamation-triangle-fill', danger: 'x-circle-fill', info: 'info-circle-fill' };
+            const bg = colors[type] || colors.success;
+            const icon = icons[type] || icons.success;
             const textColor = type === 'warning' ? '#333' : 'white';
-            const icon = type === 'success' ? 'check-circle-fill' : (type === 'warning' ? 'exclamation-triangle-fill' : 'x-circle-fill');
-            const toastHtml = `<div class="toast" style="background: ${bgColor}; color: ${textColor}; border-radius: 10px; margin-bottom: 10px;"><div class="toast-body"><i class="bi bi-${icon} me-2"></i>${message}</div></div>`;
-            container.insertAdjacentHTML('afterbegin', toastHtml);
-            setTimeout(() => { if(container.firstElementChild) container.firstElementChild.remove(); }, 4000);
+            const html = `<div class="toast" style="background:${bg};color:${textColor};border-radius:10px;margin-bottom:10px;"><div class="toast-body"><i class="bi bi-${icon} me-2"></i>${message}</div></div>`;
+            container.insertAdjacentHTML('afterbegin', html);
+            setTimeout(() => { if(container.firstElementChild) container.firstElementChild.remove(); }, 5000);
         }
         
-        function escapeHtml(t) { 
-            if(!t) return ''; 
-            const d = document.createElement('div'); 
-            d.textContent = t; 
-            return d.innerHTML; 
+        function escapeHtml(t) { if(!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        
+        function formatDate(date) {
+            if (!date) return '-';
+            try {
+                const d = date.toDate ? date.toDate() : new Date(date);
+                return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } catch(e) { return '-'; }
         }
         
-        function updateWelcomeMessage() {
-            const welcomeName = document.getElementById('welcomeName');
-            const welcomeInfo = document.getElementById('welcomeInfo');
-            
-            if (welcomeName) welcomeName.innerHTML = `Bonjour, ${escapeHtml(currentUser.nomComplet)}`;
-            if (welcomeInfo) {
-                welcomeInfo.innerHTML = `Email: ${currentUser.email} | Espace Académique`;
+        function formatDateTime(date) {
+            if (!date) return '-';
+            try {
+                const d = date.toDate ? date.toDate() : new Date(date);
+                return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch(e) { return '-'; }
+        }
+        
+        function getProfessorName(profId) {
+            const prof = allProfesseurs.find(p => p.id === profId);
+            return prof ? (prof.nomComplet || prof.email || profId) : profId;
+        }
+        
+        function getPromotionName(promoId) {
+            if (!promoId) return 'Non définie';
+            const promo = allPromotions.find(p => p.id === promoId);
+            return promo ? promo.nom : promoId;
+        }
+        
+        function showLoading(show, message = 'Traitement en cours...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const text = document.getElementById('loadingText');
+            if (show) {
+                overlay.classList.add('show');
+                if (text) text.textContent = message;
+            } else {
+                overlay.classList.remove('show');
             }
         }
         
-        // Navigation vers les pages
+        function showPage(page) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById('page-' + page);
+            if (target) {
+                target.classList.add('active');
+                if (page === 'cours') chargerCours();
+                if (page === 'examen') chargerSeances();
+                if (page === 'communiquer') chargerCommuniques();
+                if (page === 'horaires') { 
+                    // Recharger les données si nécessaire
+                    if (allPromotions.length === 0) {
+                        chargerPromotionsPourHoraires();
+                    }
+                    if (allCours.length === 0) {
+                        chargerCoursPourHoraires();
+                    }
+                    if (allProfesseurs.length === 0) {
+                        chargerProfesseursPourHoraires();
+                    }
+                    initHoraires();
+                }
+                if (page === 'projet') { initProjets(); }
+            } else {
+                document.getElementById('page-home').classList.add('active');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // ==================== NAVIGATION MENU ====================
         document.querySelectorAll('.menu-card').forEach(card => {
             card.addEventListener('click', () => {
                 const page = card.dataset.page;
-                if (page) {
-                    window.location.href = `${page}.html`;
-                }
+                showPage(page);
             });
         });
         
-        // Profil modal
+        // ==================== PROFIL ====================
         document.getElementById('profileBtn').onclick = () => {
-            document.getElementById('profilNom').textContent = currentUser.nomComplet;
-            document.getElementById('profilEmail').textContent = currentUser.email;
-            document.getElementById('profilRole').textContent = `Rôle: ${currentUser.role === 'academique' ? 'Académique' : 'Utilisateur'}`;
+            document.getElementById('profilNom').textContent = currentUser?.nomComplet || 'Administrateur';
+            document.getElementById('profilEmail').textContent = currentUser?.email || '';
+            document.getElementById('profilRole').textContent = 'Rôle: Académique';
             document.getElementById('profileModal').style.display = 'flex';
         };
         
-        window.closeProfileModal = () => document.getElementById('profileModal').style.display = 'none';
+        window.closeProfileModal = () => {
+            document.getElementById('profileModal').style.display = 'none';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+        };
+        
+        document.getElementById('profileModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProfileModal();
+        });
         
         document.getElementById('logoutBtn').onclick = () => {
-            localStorage.removeItem('session_academique');
-            window.location.href = 'index.html';
+            if (confirm('Se déconnecter ?')) {
+                if (comUnsubscriber) comUnsubscriber();
+                if (seanceUnsubscriber) seanceUnsubscriber();
+                if (horairesUnsubscriber) horairesUnsubscriber();
+                localStorage.removeItem('session_academique');
+                window.location.href = 'index.html';
+            }
         };
         
         document.getElementById('changePasswordBtn').onclick = async () => {
-            const newPwd = document.getElementById('newPassword').value;
-            const confirmPwd = document.getElementById('confirmNewPassword').value;
-            if (newPwd !== confirmPwd) {
-                showToast('Les mots de passe ne correspondent pas', 'warning');
-                return;
-            }
-            if (newPwd.length < 4) {
-                showToast('Minimum 4 caractères', 'warning');
-                return;
-            }
+            const np = document.getElementById('newPassword').value;
+            const cp = document.getElementById('confirmNewPassword').value;
+            if (!np || !cp) { showToast('Champs requis', 'warning'); return; }
+            if (np !== cp) { showToast('Mots de passe différents', 'warning'); return; }
+            if (np.length < 4) { showToast('Minimum 4 caractères', 'warning'); return; }
             try {
-                await db.collection('utilisateurs').doc(currentUser.id).update({
-                    motDePasse: newPwd
-                });
-                showToast('Mot de passe modifié avec succès', 'success');
+                await db.collection('utilisateurs').doc(currentUser.id).update({ motDePasse: np });
+                showToast('✅ Mot de passe modifié', 'success');
                 closeProfileModal();
-                document.getElementById('newPassword').value = '';
-                document.getElementById('confirmNewPassword').value = '';
-            } catch (error) {
-                showToast('Erreur: ' + error.message, 'error');
+            } catch(e) {
+                showToast('❌ Erreur: ' + e.message, 'danger');
             }
         };
         
-        updateWelcomeMessage();
+        // ==================== ACCUEIL ====================
+        function updateWelcome() {
+            const welcomeName = document.getElementById('welcomeName');
+            const welcomeInfo = document.getElementById('welcomeInfo');
+            if (welcomeName) welcomeName.innerHTML = `Bonjour, ${escapeHtml(currentUser?.nomComplet || 'Professeur')}`;
+            if (welcomeInfo) welcomeInfo.innerHTML = `Email: ${currentUser?.email || ''} | Espace Académique`;
+        }
+        updateWelcome();
         
-        console.log('✅ Dashboard académique chargé');
-        console.log('Pages disponibles: bordereau.html, horaires.html, cours.html, communiquer.html, projet.html');
- 
+        // ==================== COURS ====================
+        async function chargerProfesseurs() {
+            try {
+                const snapshot = await db.collection('utilisateurs').where('role', '==', 'professeur').get();
+                allProfesseurs = [];
+                snapshot.forEach(doc => allProfesseurs.push({ id: doc.id, ...doc.data() }));
+                allProfesseurs.sort((a, b) => (a.nomComplet || '').localeCompare(b.nomComplet || ''));
+                const select = document.getElementById('coursProfesseur');
+                if (select) {
+                    select.innerHTML = '<option value="">-- Sélectionner --</option>';
+                    allProfesseurs.forEach(p => {
+                        select.innerHTML += `<option value="${p.id}">${escapeHtml(p.nomComplet)} (${escapeHtml(p.specialite || 'N/A')})</option>`;
+                    });
+                }
+            } catch(e) { console.error('Erreur chargement professeurs:', e); }
+        }
+        
+        async function chargerPromotionsCours() {
+            try {
+                const snapshot = await db.collection('promotions').get();
+                allPromotions = [];
+                snapshot.forEach(doc => allPromotions.push({ id: doc.id, ...doc.data() }));
+                allPromotions.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+                const select = document.getElementById('coursPromotion');
+                if (select) {
+                    select.innerHTML = '<option value="">-- Sélectionner --</option>';
+                    allPromotions.forEach(p => {
+                        select.innerHTML += `<option value="${p.id}">${escapeHtml(p.nom)}</option>`;
+                    });
+                }
+                // Mettre à jour aussi le select des horaires si la page est chargée
+                const horaireSelect = document.getElementById('promotionHoraire');
+                if (horaireSelect && allPromotions.length > 0) {
+                    horaireSelect.innerHTML = '<option value="">-- Sélectionner une promotion --</option>';
+                    allPromotions.forEach(p => {
+                        horaireSelect.innerHTML += `<option value="${p.id}">${escapeHtml(p.nom)}</option>`;
+                    });
+                }
+            } catch(e) { console.error('Erreur chargement promotions:', e); }
+        }
+        
+        async function chargerCours() {
+            try {
+                const snapshot = await db.collection('cours').orderBy('dateCreation', 'desc').get();
+                allCours = [];
+                snapshot.forEach(doc => allCours.push({ id: doc.id, ...doc.data() }));
+                afficherCours();
+            } catch(e) {
+                console.error('Erreur chargement cours:', e);
+                document.getElementById('coursListe').innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle-fill" style="color:#dc3545;"></i><h5>Erreur</h5><p>${e.message}</p></div>`;
+            }
+        }
+        
+        function afficherCours() {
+            const container = document.getElementById('coursListe');
+            if (!container) return;
+            if (allCours.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="bi bi-inbox"></i><h5>Aucun cours</h5><p>Publiez votre premier cours</p></div>`;
+                return;
+            }
+            const profMap = {}; allProfesseurs.forEach(p => profMap[p.id] = p.nomComplet);
+            const promoMap = {}; allPromotions.forEach(p => promoMap[p.id] = p.nom);
+            let html = '';
+            allCours.forEach(c => {
+                const profNom = profMap[c.professeurId] || c.professeurNom || 'N/A';
+                const promoNom = promoMap[c.promotionId] || c.promotionNom || 'N/A';
+                const dateCreation = c.dateCreation ? formatDateTime(c.dateCreation) : '-';
+                html += `<div class="cours-item">
+                    <div class="cours-info">
+                        <div class="cours-nom"><i class="bi bi-book-fill"></i> ${escapeHtml(c.nom)}</div>
+                        <div class="cours-details">
+                            <span class="cours-badge badge-credit"><i class="bi bi-star-fill"></i> ${c.credits || 0} crédit(s)</span>
+                            <span class="cours-badge badge-prof"><i class="bi bi-person-fill"></i> ${escapeHtml(profNom)}</span>
+                            <span class="cours-badge badge-promo"><i class="bi bi-trophy-fill"></i> ${escapeHtml(promoNom)}</span>
+                            <br><small class="text-muted">Créé le ${dateCreation}</small>
+                        </div>
+                    </div>
+                    <button class="btn-delete" onclick="supprimerCours('${c.id}')"><i class="bi bi-trash-fill"></i></button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        window.supprimerCours = async function(id) {
+            if (!confirm('Supprimer ce cours ?')) return;
+            try {
+                await db.collection('cours').doc(id).delete();
+                allCours = allCours.filter(c => c.id !== id);
+                afficherCours();
+                showToast('✅ Cours supprimé', 'success');
+            } catch(e) { showToast('❌ Erreur: ' + e.message, 'danger'); }
+        };
+        
+        document.getElementById('coursForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nom = document.getElementById('coursNom').value.trim();
+            const credit = parseInt(document.getElementById('coursCredit').value);
+            const profId = document.getElementById('coursProfesseur').value;
+            const promoId = document.getElementById('coursPromotion').value;
+            if (!nom) { showToast('Nom requis', 'warning'); return; }
+            if (isNaN(credit) || credit < 1 || credit > 10) { showToast('Crédits entre 1 et 10', 'warning'); return; }
+            if (!profId) { showToast('Sélectionnez un professeur', 'warning'); return; }
+            if (!promoId) { showToast('Sélectionnez une promotion', 'warning'); return; }
+            const prof = allProfesseurs.find(p => p.id === profId);
+            const promo = allPromotions.find(p => p.id === promoId);
+            const btn = document.getElementById('coursSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner me-2"></span> Publication...';
+            try {
+                await db.collection('cours').add({
+                    nom, credits: credit,
+                    professeurId: profId, professeurNom: prof?.nomComplet || 'Inconnu',
+                    promotionId: promoId, promotionNom: promo?.nom || 'Inconnue',
+                    creePar: currentUser.id, creeParNom: currentUser.nomComplet,
+                    dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('✅ Cours publié', 'success');
+                document.getElementById('coursForm').reset();
+                await chargerCours();
+            } catch(e) { showToast('❌ Erreur: ' + e.message, 'danger'); }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cloud-upload-fill"></i> Publier le cours';
+        });
+        
+        document.getElementById('coursRefreshBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('coursRefreshBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="width:16px;height:16px;border-width:2px;border-color:#e0e0e0;border-top-color:var(--primary-blue);"></span>';
+            await chargerCours();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Actualiser';
+        });
+        
+        // ==================== EXAMEN ====================
+        function getSeanceStatus(dateDebut, dateFin) {
+            const now = new Date();
+            const debut = dateDebut?.toDate ? dateDebut.toDate() : new Date(dateDebut);
+            const fin = dateFin?.toDate ? dateFin.toDate() : new Date(dateFin);
+            if (now < debut) return { status: 'upcoming', label: 'À venir', class: 'badge-upcoming', cardClass: 'seance-upcoming' };
+            if (now > fin) return { status: 'expired', label: 'Expirée', class: 'badge-expired', cardClass: 'seance-expired' };
+            return { status: 'active', label: 'En cours', class: 'badge-active', cardClass: 'seance-active' };
+        }
+        
+        async function chargerSeances() {
+            try {
+                const snapshot = await db.collection('seancesExamen').orderBy('dateDebut', 'desc').get();
+                allSeances = [];
+                snapshot.forEach(doc => allSeances.push({ id: doc.id, ...doc.data() }));
+                const container = document.getElementById('examenListe');
+                const countBadge = document.getElementById('examenCount');
+                if (allSeances.length === 0) {
+                    container.innerHTML = `<div class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:48px;"></i><p class="mt-2">Aucune séance</p></div>`;
+                    countBadge.textContent = '0';
+                    return;
+                }
+                countBadge.textContent = `${allSeances.length} séance(s)`;
+                let html = '';
+                allSeances.forEach(s => {
+                    const statusInfo = getSeanceStatus(s.dateDebut, s.dateFin);
+                    html += `<div class="seance-card ${statusInfo.cardClass}">
+                        <div class="row align-items-center">
+                            <div class="col-md-4"><h6 class="mb-1"><i class="bi bi-calendar-event"></i> Début</h6><p class="mb-0 fw-bold">${formatDateTime(s.dateDebut)}</p></div>
+                            <div class="col-md-4"><h6 class="mb-1"><i class="bi bi-calendar-x"></i> Fin</h6><p class="mb-0 fw-bold">${formatDateTime(s.dateFin)}</p></div>
+                            <div class="col-md-2 text-center"><span class="badge-status ${statusInfo.class}">${statusInfo.label}</span></div>
+                            <div class="col-md-2 text-end"><small class="text-muted">ID: ${s.id.substring(0,8)}...</small></div>
+                        </div>
+                        ${statusInfo.status === 'active' ? `<div class="mt-3 pt-3 border-top"><small class="text-success"><i class="bi bi-broadcast"></i> Séance active</small></div>` : ''}
+                    </div>`;
+                });
+                container.innerHTML = html;
+            } catch(e) {
+                console.error('Erreur chargement séances:', e);
+                showToast('Erreur chargement séances', 'danger');
+            }
+        }
+        
+        document.getElementById('examenCreateBtn').addEventListener('click', async () => {
+            const dateDebutInput = document.getElementById('examenDateDebut').value;
+            const dateFinInput = document.getElementById('examenDateFin').value;
+            if (!dateDebutInput || !dateFinInput) { showToast('Veuillez sélectionner les deux dates', 'warning'); return; }
+            const dateDebut = new Date(dateDebutInput);
+            const dateFin = new Date(dateFinInput);
+            if (dateDebut >= dateFin) { showToast('La date de début doit être antérieure à la fin', 'warning'); return; }
+            if (dateFin < new Date()) { showToast('La date de fin est déjà passée', 'warning'); return; }
+            const btn = document.getElementById('examenCreateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner me-2"></span>Création...';
+            try {
+                await db.collection('seancesExamen').add({
+                    dateDebut: firebase.firestore.Timestamp.fromDate(dateDebut),
+                    dateFin: firebase.firestore.Timestamp.fromDate(dateFin),
+                    dateDebutStr: dateDebut.toISOString(),
+                    dateFinStr: dateFin.toISOString(),
+                    creePar: currentUser.nomComplet || 'Administrateur',
+                    dateCreation: firebase.firestore.FieldValue.serverTimestamp(),
+                    active: true,
+                    nombreEntrees: 0
+                });
+                showToast('✅ Séance créée', 'success');
+                document.getElementById('examenDateDebut').value = '';
+                document.getElementById('examenDateFin').value = '';
+                await chargerSeances();
+            } catch(e) { showToast('❌ Erreur: ' + e.message, 'danger'); }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Créer';
+        });
+        
+        // Initialiser les dates pour examen
+        (function initExamenDates() {
+            const now = new Date();
+            const nowStr = now.toISOString().slice(0, 16);
+            const debutInput = document.getElementById('examenDateDebut');
+            const finInput = document.getElementById('examenDateFin');
+            if (debutInput) { debutInput.min = nowStr; }
+            if (finInput) { finInput.min = nowStr; }
+            if (debutInput) {
+                debutInput.addEventListener('change', function() {
+                    if (finInput) finInput.min = this.value;
+                });
+            }
+        })();
+        
+        // ==================== COMMUNIQUER ====================
+        async function verifierSupportNotifications() {
+            const infoText = document.getElementById('notifInfoText');
+            if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+                document.getElementById('notifInfo').style.background = '#fff3cd';
+                document.getElementById('notifInfo').style.border = '1px solid #ffc107';
+                document.getElementById('notifInfo').style.color = '#856404';
+                infoText.textContent = '⚠️ Notifications non supportées';
+                return false;
+            }
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+                document.getElementById('notifInfo').style.background = '#d4edda';
+                document.getElementById('notifInfo').style.border = '1px solid #c3e6cb';
+                document.getElementById('notifInfo').style.color = '#155724';
+                infoText.innerHTML = '<i class="bi bi-check-circle-fill"></i> Notifications actives';
+                return true;
+            } else {
+                infoText.textContent = '⚠️ Service Worker non enregistré';
+                return false;
+            }
+        }
+        
+        async function chargerPromotionsCom() {
+            try {
+                const snapshot = await db.collection('promotions').get();
+                allPromotions = [];
+                snapshot.forEach(doc => allPromotions.push({ id: doc.id, ...doc.data() }));
+                const container = document.getElementById('comPromotionsList');
+                if (container && allPromotions.length > 0) {
+                    let html = '';
+                    allPromotions.forEach(p => {
+                        html += `<div class="promotion-checkbox-item">
+                            <input type="checkbox" class="com-promotion-checkbox" value="${p.id}" id="comPromo_${p.id}">
+                            <label for="comPromo_${p.id}"><strong>${escapeHtml(p.nom)}</strong></label>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }
+                document.getElementById('comSelectAll').addEventListener('change', (e) => {
+                    document.querySelectorAll('.com-promotion-checkbox').forEach(cb => cb.checked = e.target.checked);
+                });
+            } catch(e) { console.error('Erreur promotions:', e); }
+        }
+        
+        async function envoyerNotificationsPush(communique) {
+            try {
+                let count = 0;
+                const batch = db.batch();
+                for (const promoId of communique.promotions || []) {
+                    const students = await db.collection('etudiants').where('promotion', '==', promoId).get();
+                    const studentIds = [];
+                    students.forEach(doc => studentIds.push(doc.id));
+                    for (const sid of studentIds) {
+                        const tokenDoc = await db.collection('fcmTokens').doc(sid).get();
+                        if (tokenDoc.exists) {
+                            const notifRef = db.collection('notifications').doc();
+                            batch.set(notifRef, {
+                                etudiantId: sid,
+                                titre: '📢 ' + communique.titre,
+                                message: communique.description.substring(0, 150),
+                                description: communique.description,
+                                communiqueId: communique.id,
+                                promotions: [promoId],
+                                dateEnvoi: firebase.firestore.FieldValue.serverTimestamp(),
+                                lu: false,
+                                type: 'communique',
+                                url: 'communiquer.html?communique=' + communique.id
+                            });
+                            count++;
+                        }
+                    }
+                }
+                await batch.commit();
+                await db.collection('communiques').doc(communique.id).update({
+                    notificationsEnvoyees: count,
+                    notificationEnvoyee: true
+                });
+                return count;
+            } catch(e) { console.error('Erreur envoi notifications:', e); return 0; }
+        }
+        
+        async function supprimerCommuniquesExpires() {
+            try {
+                const maintenant = new Date();
+                const snapshot = await db.collection('communiques').get();
+                const batch = db.batch();
+                let supprimes = 0;
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    if (data.dateFin) {
+                        let dateFin;
+                        try { dateFin = data.dateFin.toDate ? data.dateFin.toDate() : new Date(data.dateFin.seconds * 1000); } catch(e) { dateFin = new Date(data.dateFin); }
+                        if (dateFin < maintenant) {
+                            batch.delete(doc.ref);
+                            supprimes++;
+                            const notifs = await db.collection('notifications').where('communiqueId', '==', doc.id).get();
+                            const nb = db.batch();
+                            notifs.forEach(d => nb.delete(d.ref));
+                            await nb.commit();
+                        }
+                    }
+                }
+                if (supprimes > 0) { await batch.commit(); }
+            } catch(e) { console.error('Erreur suppression:', e); }
+        }
+        
+        window.supprimerTousExpires = async function() {
+            if (confirm('Supprimer tous les communiqués expirés ?')) {
+                await supprimerCommuniquesExpires();
+                await chargerCommuniques();
+                showToast('✅ Expirés supprimés', 'success');
+            }
+        };
+        
+        function afficherCommuniques(communiques) {
+            const container = document.getElementById('comListe');
+            if (!container) return;
+            allCommuniques = communiques;
+            const maintenant = new Date();
+            const actifs = communiques.filter(c => !c.estExpire);
+            const expires = communiques.filter(c => c.estExpire);
+            const notifies = communiques.filter(c => c.notificationEnvoyee);
+            document.getElementById('comStatTotal').textContent = communiques.length;
+            document.getElementById('comStatActifs').textContent = actifs.length;
+            document.getElementById('comStatExpires').textContent = expires.length;
+            document.getElementById('comStatNotifies').textContent = notifies.length;
+            if (communiques.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="bi bi-inbox"></i><h5>Aucun communiqué</h5></div>`;
+                return;
+            }
+            let html = '';
+            communiques.forEach(data => {
+                const promoNoms = [];
+                if (data.promotions) {
+                    data.promotions.forEach(pid => {
+                        const p = allPromotions.find(x => x.id === pid);
+                        promoNoms.push(p ? p.nom : pid);
+                    });
+                }
+                let statusClass = 'badge-active';
+                let statusText = 'Actif';
+                if (data.estExpire) { statusClass = 'badge-expired'; statusText = 'Expiré'; }
+                const cardClass = data.estExpire ? 'communique-card expired' : 'communique-card';
+                html += `<div class="${cardClass}" data-id="${data.id}">
+                    <button class="btn-delete" onclick="supprimerCommunique('${data.id}')" style="position:absolute;top:15px;right:15px;"><i class="bi bi-trash-fill"></i></button>
+                    <div class="communique-title">📢 ${escapeHtml(data.titre)}</div>
+                    <div class="communique-date">
+                        <span><i class="bi bi-calendar-plus"></i> ${formatDateTime(data.dateCreation)}</span>
+                        <span><i class="bi bi-calendar-start"></i> ${formatDate(data.dateDebut)}</span>
+                        <span><i class="bi bi-calendar-end"></i> ${formatDate(data.dateFin)}</span>
+                        <span class="badge-status ${statusClass}">${statusText}</span>
+                        ${data.notificationEnvoyee ? `<span class="badge-status badge-active"><i class="bi bi-bell-fill"></i> ${data.notificationsEnvoyees || 0}</span>` : ''}
+                    </div>
+                    <div class="communique-description">${escapeHtml(data.description).substring(0, 200)}${data.description && data.description.length > 200 ? '...' : ''}</div>
+                    <div><i class="bi bi-people-fill"></i> ${promoNoms.map(n => `<span class="promotion-badge">${escapeHtml(n)}</span>`).join(' ')}</div>
+                    <div class="text-muted mt-2 small"><i class="bi bi-person-circle"></i> ${escapeHtml(data.createur || 'Administration')}</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        window.supprimerCommunique = async function(id) {
+            if (!confirm('Supprimer ce communiqué ?')) return;
+            try {
+                await db.collection('communiques').doc(id).delete();
+                const notifs = await db.collection('notifications').where('communiqueId', '==', id).get();
+                const batch = db.batch();
+                notifs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                showToast('✅ Supprimé', 'success');
+            } catch(e) { showToast('❌ Erreur: ' + e.message, 'danger'); }
+        };
+        
+        window.filtrerCommuniques = function() {
+            const query = document.getElementById('comSearchInput').value.toLowerCase();
+            if (!query) { afficherCommuniques(allCommuniques); return; }
+            const filtres = allCommuniques.filter(c =>
+                c.titre.toLowerCase().includes(query) ||
+                c.description.toLowerCase().includes(query) ||
+                (c.createur && c.createur.toLowerCase().includes(query))
+            );
+            afficherCommuniques(filtres);
+        };
+        
+        async function chargerCommuniques() {
+            try {
+                await supprimerCommuniquesExpires();
+                const snapshot = await db.collection('communiques').orderBy('dateCreation', 'desc').get();
+                const maintenant = new Date();
+                const communiques = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let dateFin = null;
+                    try { dateFin = data.dateFin?.toDate ? data.dateFin.toDate() : new Date(data.dateFin); } catch(e) {}
+                    communiques.push({ id: doc.id, ...data, estExpire: dateFin && dateFin < maintenant });
+                });
+                afficherCommuniques(communiques);
+            } catch(e) { console.error('Erreur chargement communiqués:', e); }
+        }
+        
+        document.getElementById('communiqueForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const titre = document.getElementById('comTitre').value.trim();
+            const description = document.getElementById('comDescription').value.trim();
+            const dateDebut = document.getElementById('comDateDebut').value;
+            const dateFin = document.getElementById('comDateFin').value;
+            const selected = [];
+            document.querySelectorAll('.com-promotion-checkbox:checked').forEach(cb => selected.push(cb.value));
+            if (!titre) { showToast('Titre requis', 'warning'); return; }
+            if (!description) { showToast('Description requise', 'warning'); return; }
+            if (!dateDebut || !dateFin) { showToast('Dates requises', 'warning'); return; }
+            if (selected.length === 0) { showToast('Sélectionnez au moins une promotion', 'warning'); return; }
+            const debut = new Date(dateDebut + 'T00:00:00');
+            const fin = new Date(dateFin + 'T23:59:59');
+            if (debut > fin) { showToast('La date de début doit être avant la fin', 'warning'); return; }
+            const btn = document.getElementById('comSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner me-2"></span> Publication...';
+            try {
+                const ref = db.collection('communiques').doc();
+                const data = {
+                    titre, description, promotions: selected,
+                    dateDebut: firebase.firestore.Timestamp.fromDate(debut),
+                    dateFin: firebase.firestore.Timestamp.fromDate(fin),
+                    dateCreation: firebase.firestore.FieldValue.serverTimestamp(),
+                    createur: currentUser.nomComplet || 'Administration',
+                    createurEmail: currentUser.email || '',
+                    active: true, notificationEnvoyee: false, notificationsEnvoyees: 0
+                };
+                await ref.set(data);
+                const count = await envoyerNotificationsPush({ ...data, id: ref.id });
+                showToast(`✅ Publié ! ${count} notifications`, 'success');
+                document.getElementById('communiqueForm').reset();
+                document.querySelectorAll('.com-promotion-checkbox').forEach(cb => cb.checked = false);
+                document.getElementById('comSelectAll').checked = false;
+                const today = new Date().toISOString().split('T')[0];
+                const in7Days = new Date(); in7Days.setDate(in7Days.getDate() + 7);
+                document.getElementById('comDateDebut').value = today;
+                document.getElementById('comDateFin').value = in7Days.toISOString().split('T')[0];
+                await chargerCommuniques();
+            } catch(e) { showToast('❌ Erreur: ' + e.message, 'danger'); }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send-fill"></i> Publier';
+        });
+        
+        // ==================== HORAIRES ====================
+        // Fonctions de chargement spécifiques pour les horaires
+        async function chargerPromotionsPourHoraires() {
+            try {
+                const snapshot = await db.collection('promotions').get();
+                allPromotions = [];
+                snapshot.forEach(doc => allPromotions.push({ id: doc.id, ...doc.data() }));
+                allPromotions.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+                const select = document.getElementById('promotionHoraire');
+                if (select) {
+                    select.innerHTML = '<option value="">-- Sélectionner une promotion --</option>';
+                    allPromotions.forEach(p => {
+                        select.innerHTML += `<option value="${p.id}">${escapeHtml(p.nom)}</option>`;
+                    });
+                }
+            } catch(e) { console.error('Erreur chargement promotions horaires:', e); }
+        }
+        
+        async function chargerCoursPourHoraires() {
+            try {
+                const snapshot = await db.collection('cours').get();
+                allCours = [];
+                snapshot.forEach(doc => allCours.push({ id: doc.id, ...doc.data() }));
+            } catch(e) { console.error('Erreur chargement cours horaires:', e); }
+        }
+        
+        async function chargerProfesseursPourHoraires() {
+            try {
+                const snapshot = await db.collection('utilisateurs').where('role', '==', 'professeur').get();
+                allProfesseurs = [];
+                snapshot.forEach(doc => allProfesseurs.push({ id: doc.id, ...doc.data() }));
+                allProfesseurs.sort((a, b) => (a.nomComplet || '').localeCompare(b.nomComplet || ''));
+            } catch(e) { console.error('Erreur chargement professeurs horaires:', e); }
+        }
+        
+        // Fonctions horaires
+        function getLundiDate(date, decalage = 0) {
+            const d = new Date(date);
+            d.setDate(d.getDate() + (decalage * 7));
+            const jour = d.getDay();
+            const diff = d.getDate() - jour + (jour === 0 ? -6 : 1);
+            const lundi = new Date(d.setDate(diff));
+            lundi.setHours(0,0,0,0);
+            return lundi;
+        }
+        
+        function genererSemaines() {
+            const semaines = [];
+            const maintenant = new Date();
+            for (let i = 0; i <= 2; i++) {
+                const debut = getLundiDate(maintenant, i);
+                const fin = new Date(debut);
+                fin.setDate(fin.getDate() + 5);
+                const debutStr = debut.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' });
+                const finStr = fin.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+                semaines.push({
+                    id: `S${debut.getFullYear()}-${String(debut.getMonth()+1).padStart(2,'0')}-${String(debut.getDate()).padStart(2,'0')}`,
+                    debut, fin,
+                    label: `Semaine du ${debutStr} au ${finStr}`,
+                    debutISO: debut.toISOString().split('T')[0],
+                    finISO: fin.toISOString().split('T')[0]
+                });
+            }
+            return semaines;
+        }
+        
+        function initSemainesSelect() {
+            semainesDisponibles = genererSemaines();
+            const sel = document.getElementById('semaineSelect');
+            if (!sel) return;
+            sel.innerHTML = '';
+            semainesDisponibles.forEach((s,i) => {
+                sel.innerHTML += `<option value="${s.id}">${i===0?'📍 ':''}${s.label}</option>`;
+            });
+            if(semainesDisponibles.length>0) {
+                sel.value = semainesDisponibles[0].id;
+                selectedSemaineId = semainesDisponibles[0].id;
+                updateSemaineInfo(semainesDisponibles[0]);
+            }
+        }
+        
+        function updateSemaineInfo(s) {
+            const info = document.getElementById('semaineInfo');
+            const badge = document.getElementById('semaineBadge');
+            if(s && info && badge) {
+                info.style.display='flex';
+                const maintenant = new Date();
+                let sb = '';
+                if(maintenant > s.fin) sb = '<span class="badge bg-warning text-dark ms-2">Passée</span>';
+                else if(maintenant >= s.debut && maintenant <= s.fin) sb = '<span class="badge bg-success ms-2">En cours</span>';
+                else sb = '<span class="badge bg-info ms-2">À venir</span>';
+                badge.innerHTML = `📅 ${s.label} ${sb}`;
+            } else if(info) info.style.display='none';
+        }
+        
+        function getCreneauxOccupes(jour) {
+            return allHoraires
+                .filter(h => h.semaineId === selectedSemaineId && h.jour === jour)
+                .map(h => ({ debut: h.debut, fin: h.fin, cours: h.coursNom, prof: h.professeurNom, salle: h.salle }))
+                .sort((a,b) => a.debut.localeCompare(b.debut));
+        }
+        
+        function afficherCreneauxOccupes(jour) {
+            const container = document.getElementById('creneauxOccupes');
+            const list = document.getElementById('creneauxList');
+            if (!container || !list) return;
+            const creneaux = getCreneauxOccupes(jour);
+            if (creneaux.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+            list.innerHTML = creneaux.map(c => 
+                `<span class="creneau-tag">🕐 ${c.debut}-${c.fin} | ${escapeHtml(c.cours)} (${escapeHtml(c.prof)}) | 🏫 ${escapeHtml(c.salle)}</span>`
+            ).join('');
+        }
+        
+        function heuresChevauchent(debut1, fin1, debut2, fin2) {
+            return debut1 < fin2 && fin1 > debut2;
+        }
+        
+        function verifierConflitHeures(jour, debut, fin, professeurId) {
+            if (!selectedSemaineId || !professeurId) return null;
+            return allHoraires.find(h => {
+                if (h.semaineId !== selectedSemaineId) return false;
+                if (h.jour !== jour) return false;
+                if (h.professeurId !== professeurId) return false;
+                return heuresChevauchent(debut, fin, h.debut, h.fin);
+            }) || null;
+        }
+        
+        function verifierConflitSalle(jour, debut, fin, salle) {
+            if (!selectedSemaineId || !salle || salle === 'Non spécifiée') return null;
+            const salleLower = salle.toLowerCase();
+            return allHoraires.find(h => {
+                if (h.semaineId !== selectedSemaineId) return false;
+                if (h.jour !== jour) return false;
+                if ((h.salle || '').toLowerCase() !== salleLower) return false;
+                return heuresChevauchent(debut, fin, h.debut, h.fin);
+            }) || null;
+        }
+        
+        function afficherPanier() {
+            const container = document.getElementById('panierList');
+            document.getElementById('panierCount').textContent = panier.length;
+            if(!container) return;
+            if(panier.length === 0) {
+                container.innerHTML = `<div class="panier-empty"><i class="bi bi-cart-x"></i><p>Aucun horaire dans le panier</p><small class="text-muted">Ajoutez des créneaux pour les voir apparaître ici</small></div>`;
+                return;
+            }
+            let html = '';
+            panier.forEach((p,i) => {
+                html += `
+                <div class="panier-item">
+                    <div>
+                        <span class="panier-jour-badge ${p.jour}">${p.jour}</span>
+                        <strong class="ms-2">🕐 ${p.debut} - ${p.fin}</strong>
+                        <span class="text-muted ms-2"><i class="bi bi-geo-alt-fill"></i> ${escapeHtml(p.salle)}</span>
+                        <br><small class="text-muted ms-2">📚 ${escapeHtml(p.coursNom)} | 👨‍🏫 ${escapeHtml(p.professeurNom)}</small>
+                    </div>
+                    <button class="btn-remove-panier" onclick="retirerDuPanier(${i})"><i class="bi bi-trash-fill"></i></button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        window.retirerDuPanier = function(i) {
+            panier.splice(i,1);
+            afficherPanier();
+            mettreAJourBoutonPublier();
+            showToast('Retiré du panier','warning');
+        };
+        
+        function mettreAJourBoutonPublier() {
+            document.getElementById('publishCount').textContent = panier.length;
+            document.getElementById('publishAllBtn').disabled = panier.length === 0;
+        }
+        
+        function afficherHoraires() {
+            const container = document.getElementById('horairesContainer');
+            if (!container) return;
+            if(allHoraires.length===0) {
+                container.innerHTML = `<div class="empty-state"><i class="bi bi-calendar-x"></i><h5>Aucun horaire</h5><p>Publiez votre premier horaire ci-dessus.</p></div>`;
+                return;
+            }
+            let curSem = '', html = '';
+            allHoraires.forEach(h => {
+                if(h.semaineId !== curSem) {
+                    if(curSem) html += '</tbody></table></div></div><br>';
+                    curSem = h.semaineId;
+                    const maintenant = new Date();
+                    const fin = h.semaineFin ? new Date(h.semaineFin) : null;
+                    const expiree = fin && maintenant > fin;
+                    html += `<div class="mb-4"><h6 style="color:var(--primary-blue);"><i class="bi bi-calendar-range"></i> ${escapeHtml(h.semaineLabel||'')} ${expiree?'<span class="badge-expire ms-2">Expirée</span>':'<span class="badge-semaine ms-2">Active</span>'}</h6><div class="table-responsive"><table class="horaires-table"><thead><tr><th>Jour</th><th>Horaires</th><th>Cours</th><th>Promotion</th><th>Professeur</th><th>Salle</th><th style="width:80px;"></th></tr></thead><tbody>`;
+                }
+                html += `<tr><td><span class="badge-jour ${h.jour}">${h.jour}</span></td><td><strong>${h.debut} - ${h.fin}</strong></td><td><span class="badge-cours"><i class="bi bi-book-fill"></i> ${escapeHtml(h.coursNom)}</span></td><td><span class="badge-promo"><i class="bi bi-trophy-fill"></i> ${escapeHtml(h.promotionNom)}</span></td><td><i class="bi bi-person-fill"></i> ${escapeHtml(h.professeurNom)}</td><td>${escapeHtml(h.salle)}</td><td><button class="btn-delete" onclick="supprimerHoraire('${h.id}')"><i class="bi bi-trash-fill"></i></button></td></tr>`;
+            });
+            if(curSem) html += '</tbody></table></div></div>';
+            container.innerHTML = html;
+        }
+        
+        window.supprimerHoraire = async function(id) {
+            if(!confirm('Supprimer ?')) return;
+            await db.collection('horaires').doc(id).delete();
+            showToast('Supprimé','warning');
+        };
+        
+        function mettreAJourCoursSelect(promoId) {
+            const sel = document.getElementById('coursHoraire');
+            if(!sel) return;
+            sel.innerHTML = '<option value="">-- Sélectionner un cours --</option>';
+            if(!promoId) return;
+            const filtres = allCours.filter(c => c.promotionId === promoId);
+            if(filtres.length===0){sel.innerHTML+='<option value="" disabled>Aucun cours pour cette promotion</option>';return;}
+            filtres.forEach(c => sel.innerHTML += `<option value="${c.id}">${escapeHtml(c.nom)} (${c.credits||0} cr) - ${escapeHtml(c.professeurNom||'N/A')}</option>`);
+        }
+        
+        async function nettoyerHorairesExpires() {
+            const maintenant = new Date(); maintenant.setHours(0,0,0,0);
+            const snap = await db.collection('horaires').where('dateExpiration','<',firebase.firestore.Timestamp.fromDate(maintenant)).get();
+            if(!snap.empty){const b=db.batch();snap.forEach(d=>b.delete(d.ref));await b.commit();console.log(`🗑️ ${snap.size} horaires expirés`);}
+        }
+        
+        async function initHorairesRealtime() {
+            if (horairesUnsubscriber) horairesUnsubscriber();
+            horairesUnsubscriber = db.collection('horaires').onSnapshot(snap => {
+                allHoraires = [];
+                snap.forEach(d => allHoraires.push({id:d.id,...d.data()}));
+                allHoraires.sort((a,b) => {
+                    if(a.semaineDebut !== b.semaineDebut) return (b.semaineDebut||'').localeCompare(a.semaineDebut||'');
+                    const o = {Lundi:1,Mardi:2,Mercredi:3,Jeudi:4,Vendredi:5,Samedi:6};
+                    if(o[a.jour] !== o[b.jour]) return o[a.jour] - o[b.jour];
+                    return (a.debut||'99:99').localeCompare(b.debut||'99:99');
+                });
+                afficherHoraires();
+            }, err => {
+                console.error(err);
+                document.getElementById('horairesContainer').innerHTML = 
+                    `<div class="empty-state"><i class="bi bi-exclamation-triangle-fill" style="color:#dc3545;"></i><h5>Erreur</h5><p>${err.message}</p><button class="btn btn-warning mt-3" onclick="location.reload()">Réessayer</button></div>`;
+            });
+        }
+        
+        async function initHoraires() {
+            // S'assurer que les promotions sont chargées
+            if (allPromotions.length === 0) {
+                await chargerPromotionsPourHoraires();
+            }
+            
+            if (allCours.length === 0) {
+                await chargerCoursPourHoraires();
+            }
+            
+            if (allProfesseurs.length === 0) {
+                await chargerProfesseursPourHoraires();
+            }
+            
+            initSemainesSelect();
+            initHorairesRealtime();
+            
+            // Setup listeners
+            document.getElementById('semaineSelect').addEventListener('change', function() {
+                if(panier.length>0 && this.value!==selectedSemaineId) {
+                    if(!confirm('Changer de semaine videra le panier. Continuer ?')) { this.value=selectedSemaineId; return; }
+                    panier=[]; afficherPanier(); mettreAJourBoutonPublier();
+                }
+                selectedSemaineId = this.value;
+                updateSemaineInfo(semainesDisponibles.find(s=>s.id===selectedSemaineId));
+            });
+            
+            document.getElementById('promotionHoraire').addEventListener('change', function() {
+                mettreAJourCoursSelect(this.value);
+            });
+            
+            document.getElementById('joursGrid').addEventListener('click', function(e) {
+                const btn = e.target.closest('.jour-btn');
+                if(!btn) return;
+                document.querySelectorAll('.jour-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedJour = btn.dataset.jour;
+                document.getElementById('jourDetail').style.display = 'block';
+                document.getElementById('heureDebut').value = '';
+                document.getElementById('heureFin').value = '';
+                document.getElementById('salleHoraire').value = '';
+                document.getElementById('conflitAlert').classList.remove('show');
+                afficherCreneauxOccupes(selectedJour);
+            });
+            
+            document.getElementById('addPanierBtn').addEventListener('click', function() {
+                if (!selectedSemaineId) { showToast('Sélectionnez une semaine','warning'); return; }
+                const promoId = document.getElementById('promotionHoraire').value;
+                const coursId = document.getElementById('coursHoraire').value;
+                const debut = document.getElementById('heureDebut').value;
+                const fin = document.getElementById('heureFin').value;
+                const salle = document.getElementById('salleHoraire').value.trim();
+                
+                if(!promoId) { showToast('Sélectionnez une promotion','warning'); return; }
+                if(!coursId) { showToast('Sélectionnez un cours','warning'); return; }
+                if(!selectedJour) { showToast('Sélectionnez un jour','warning'); return; }
+                if(!debut || !fin) { showToast('Définissez les heures','warning'); return; }
+                if(debut >= fin) { showToast('Heure début < Heure fin','warning'); return; }
+                
+                const cours = allCours.find(c => c.id === coursId);
+                if (!cours) { showToast('Cours introuvable','danger'); return; }
+                
+                const conflitProf = verifierConflitHeures(selectedJour, debut, fin, cours.professeurId);
+                if (conflitProf) {
+                    document.getElementById('conflitAlert').classList.add('show');
+                    document.getElementById('conflitMessage').innerHTML = 
+                        `<strong>⚠️ Conflit de créneau !</strong> <strong>${escapeHtml(conflitProf.professeurNom)}</strong> a déjà un cours le <strong>${selectedJour}</strong> de <strong>${conflitProf.debut}</strong> à <strong>${conflitProf.fin}</strong><br>
+                        <small>Cours : ${escapeHtml(conflitProf.coursNom)} | Salle : ${escapeHtml(conflitProf.salle)}</small>`;
+                    return;
+                }
+                
+                const conflitSalle = verifierConflitSalle(selectedJour, debut, fin, salle);
+                if (conflitSalle) {
+                    document.getElementById('conflitAlert').classList.add('show');
+                    document.getElementById('conflitMessage').innerHTML = 
+                        `<strong>⚠️ Conflit de salle !</strong> La salle <strong>${escapeHtml(salle)}</strong> est occupée le <strong>${selectedJour}</strong> de <strong>${conflitSalle.debut}</strong> à <strong>${conflitSalle.fin}</strong><br>
+                        <small>Cours : ${escapeHtml(conflitSalle.coursNom)} | Prof : ${escapeHtml(conflitSalle.professeurNom)}</small>`;
+                    return;
+                }
+                
+                const promotion = allPromotions.find(p => p.id === promoId);
+                panier.push({
+                    jour: selectedJour, debut, fin, salle: salle || 'Non spécifiée',
+                    promotionId: promoId, promotionNom: promotion ? promotion.nom : '',
+                    coursId, coursNom: cours.nom,
+                    professeurNom: cours.professeurNom || 'N/A',
+                    professeurId: cours.professeurId || '',
+                    credits: cours.credits || 0
+                });
+                
+                const ordre = { Lundi:1, Mardi:2, Mercredi:3, Jeudi:4, Vendredi:5, Samedi:6 };
+                panier.sort((a,b) => {
+                    if (ordre[a.jour] !== ordre[b.jour]) return ordre[a.jour] - ordre[b.jour];
+                    return a.debut.localeCompare(b.debut);
+                });
+                
+                afficherPanier();
+                mettreAJourBoutonPublier();
+                
+                document.querySelectorAll('.jour-btn').forEach(b => b.classList.remove('selected'));
+                selectedJour = '';
+                document.getElementById('jourDetail').style.display = 'none';
+                document.getElementById('creneauxOccupes').style.display = 'none';
+                document.getElementById('conflitAlert').classList.remove('show');
+                
+                showToast('✅ Créneau ajouté au panier','success');
+            });
+            
+            document.getElementById('publishAllBtn').addEventListener('click', async function() {
+                if(!selectedSemaineId){showToast('Sélectionnez une semaine','warning');return;}
+                if(panier.length===0){showToast('Panier vide','warning');return;}
+                
+                const semaine = semainesDisponibles.find(s=>s.id===selectedSemaineId);
+                if(!semaine){showToast('Semaine invalide','danger');return;}
+                
+                const btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner me-2"></span> Publication...';
+                
+                try {
+                    const batch = db.batch();
+                    panier.forEach(p => {
+                        const ref = db.collection('horaires').doc();
+                        batch.set(ref, {
+                            jour: p.jour, debut: p.debut, fin: p.fin, salle: p.salle,
+                            promotionId: p.promotionId, promotionNom: p.promotionNom,
+                            coursId: p.coursId, coursNom: p.coursNom,
+                            professeurNom: p.professeurNom, professeurId: p.professeurId,
+                            credits: p.credits,
+                            semaineId: selectedSemaineId, semaineLabel: semaine.label,
+                            semaineDebut: semaine.debutISO, semaineFin: semaine.finISO,
+                            dateExpiration: firebase.firestore.Timestamp.fromDate(new Date(semaine.fin.getTime()+7*86400000)),
+                            creePar: currentUser.id, creeParNom: currentUser.nomComplet,
+                            dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+                    await batch.commit();
+                    showToast(`✅ ${panier.length} créneau(x) publié(s) !`,'success');
+                    panier = [];
+                    afficherPanier();
+                    mettreAJourBoutonPublier();
+                } catch(err) {
+                    console.error(err);
+                    showToast('Erreur: '+err.message,'danger');
+                } finally {
+                    btn.disabled = panier.length===0;
+                    btn.innerHTML = `<i class="bi bi-cloud-upload-fill"></i> Publier tout (<span id="publishCount">${panier.length}</span> créneaux)`;
+                }
+            });
+            
+            // Nettoyer les expirés
+            nettoyerHorairesExpires();
+            setInterval(nettoyerHorairesExpires, 3600000);
+        }
+        
+        // ==================== PROJETS ====================
+        async function initProjets() {
+            if (allProfesseurs.length === 0) {
+                const snap = await db.collection('utilisateurs').where('role', '==', 'professeur').get();
+                allProfesseurs = [];
+                snap.forEach(d => allProfesseurs.push({id:d.id,...d.data()}));
+                allProfesseurs.sort((a,b)=>(a.nomComplet||'').localeCompare(b.nomComplet||''));
+            }
+            
+            if (allStudents.length === 0) {
+                const snap = await db.collection('etudiants').get();
+                allStudents = [];
+                snap.forEach(d => allStudents.push({id:d.id,...d.data()}));
+            }
+            
+            if (allProjects.length === 0) {
+                const snap = await db.collection('projets').get();
+                allProjects = [];
+                snap.forEach(d => allProjects.push({id:d.id,...d.data()}));
+            }
+            
+            if (allPromotions.length === 0) {
+                const snap = await db.collection('promotions').get();
+                allPromotions = [];
+                snap.forEach(d => allPromotions.push({id:d.id,...d.data()}));
+            }
+            
+            // Remplir la liste des professeurs
+            const container = document.getElementById('professorsCheckboxList');
+            if (container) {
+                if (allProfesseurs.length === 0) {
+                    container.innerHTML = '<p class="text-muted">Aucun professeur trouvé</p>';
+                } else {
+                    container.innerHTML = allProfesseurs.map(prof => `
+                        <label class="professor-checkbox-item" data-prof-id="${prof.id}">
+                            <input type="checkbox" value="${prof.id}" class="prof-checkbox">
+                            <div class="professor-info">
+                                <div class="professor-name">${escapeHtml(prof.nomComplet || 'Sans nom')}</div>
+                                <div class="professor-details">
+                                    <i class="bi bi-envelope"></i> ${escapeHtml(prof.email || 'N/A')} 
+                                    ${prof.telephone ? `| <i class="bi bi-telephone"></i> ${escapeHtml(prof.telephone)}` : ''}
+                                    ${prof.departement ? `| <i class="bi bi-building"></i> ${escapeHtml(prof.departement)}` : ''}
+                                </div>
+                            </div>
+                        </label>
+                    `).join('');
+                    
+                    // Setup checkbox listeners
+                    document.querySelectorAll('.professor-checkbox-item').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            if (e.target.tagName === 'INPUT') return;
+                            const checkbox = this.querySelector('input[type="checkbox"]');
+                            checkbox.checked = !checkbox.checked;
+                            this.classList.toggle('selected', checkbox.checked);
+                        });
+                        const checkbox = item.querySelector('input[type="checkbox"]');
+                        checkbox.addEventListener('change', function() {
+                            item.classList.toggle('selected', this.checked);
+                        });
+                    });
+                }
+            }
+            
+            // Remplir le select des professeurs pour changement
+            const select = document.getElementById('nouveauDirecteur');
+            if (select) {
+                select.innerHTML = '<option value="">-- Sélectionnez un professeur --</option>';
+                allProfesseurs.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${escapeHtml(p.nomComplet || p.email || p.id)}</option>`;
+                });
+            }
+            
+            // Setup events
+            document.getElementById('btnAutoAssign').addEventListener('click', autoAssignDirectors);
+            document.getElementById('changeDirectorForm').addEventListener('submit', handleChangeDirector);
+            document.getElementById('matriculeEtudiant').addEventListener('input', searchStudent);
+        }
+        
+        async function autoAssignDirectors() {
+            const selectedCheckboxes = document.querySelectorAll('.prof-checkbox:checked');
+            const selectedProfIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            
+            if (selectedProfIds.length === 0) {
+                showToast('Veuillez sélectionner au moins un professeur', 'warning');
+                return;
+            }
+            
+            const projectsWithoutDirector = allProjects.filter(p => !p.directeurId);
+            if (projectsWithoutDirector.length === 0) {
+                showToast('Tous les étudiants ont déjà un directeur assigné', 'info');
+                return;
+            }
+            
+            if (!confirm(`Assigner automatiquement ${projectsWithoutDirector.length} étudiant(s) sans directeur à ${selectedProfIds.length} professeur(s) sélectionné(s) ?`)) {
+                return;
+            }
+            
+            showLoading(true, 'Assignation automatique en cours...');
+            
+            try {
+                const batch = db.batch();
+                let profIndex = 0;
+                projectsWithoutDirector.forEach(project => {
+                    const profId = selectedProfIds[profIndex % selectedProfIds.length];
+                    batch.update(db.collection('projets').doc(project.id), { directeurId: profId });
+                    profIndex++;
+                });
+                await batch.commit();
+                showLoading(false);
+                showToast(`✅ ${projectsWithoutDirector.length} étudiant(s) assigné(s) avec succès !`, 'success');
+                // Recharger les projets
+                const snap = await db.collection('projets').get();
+                allProjects = [];
+                snap.forEach(d => allProjects.push({id:d.id,...d.data()}));
+            } catch (error) {
+                showLoading(false);
+                console.error('Erreur assignation:', error);
+                showToast('❌ Erreur : ' + error.message, 'danger');
+            }
+        }
+        
+        function searchStudent() {
+            const matricule = this.value.trim().toLowerCase();
+            const preview = document.getElementById('studentPreview');
+            if (matricule.length < 2) { preview.innerHTML = ''; return; }
+            
+            const student = allStudents.find(s => s.matricule && s.matricule.toLowerCase().includes(matricule));
+            if (student) {
+                const project = allProjects.find(p => p.etudiantId === student.id);
+                const currentDirector = project && project.directeurId ? getProfessorName(project.directeurId) : 'Non assigné';
+                const promotionName = getPromotionName(student.promotion);
+                preview.innerHTML = `
+                    <div class="student-card">
+                        <div class="student-name"><i class="bi bi-person-check"></i> ${escapeHtml(student.nom || 'N/A')}</div>
+                        <div class="student-info">
+                            Promotion: ${escapeHtml(promotionName)} | 
+                            Directeur actuel: ${escapeHtml(currentDirector)}
+                        </div>
+                    </div>
+                `;
+            } else {
+                preview.innerHTML = '<p class="text-muted mt-1"><i class="bi bi-exclamation-circle"></i> Aucun étudiant trouvé avec ce matricule</p>';
+            }
+        }
+        
+        async function handleChangeDirector(e) {
+            e.preventDefault();
+            const matricule = document.getElementById('matriculeEtudiant').value.trim();
+            const nouveauDirecteurId = document.getElementById('nouveauDirecteur').value;
+            
+            if (!matricule) { showToast('Veuillez entrer un matricule', 'warning'); return; }
+            if (!nouveauDirecteurId) { showToast('Veuillez sélectionner un nouveau directeur', 'warning'); return; }
+            
+            const student = allStudents.find(s => s.matricule === matricule);
+            if (!student) { showToast('Aucun étudiant trouvé avec ce matricule', 'danger'); return; }
+            
+            const project = allProjects.find(p => p.etudiantId === student.id);
+            if (!project) { showToast('Cet étudiant n\'a pas encore soumis de projet', 'danger'); return; }
+            
+            const promotionName = getPromotionName(student.promotion);
+            if (!confirm(`Confirmer le changement de directeur pour l'étudiant ${student.nom || matricule} (${promotionName}) ?\n\nNouveau directeur : ${getProfessorName(nouveauDirecteurId)}`)) {
+                return;
+            }
+            
+            showLoading(true, 'Mise à jour du directeur...');
+            try {
+                await db.collection('projets').doc(project.id).update({ directeurId: nouveauDirecteurId });
+                showLoading(false);
+                showToast('✅ Directeur changé avec succès !', 'success');
+                document.getElementById('matriculeEtudiant').value = '';
+                document.getElementById('nouveauDirecteur').value = '';
+                document.getElementById('studentPreview').innerHTML = '';
+                // Recharger les projets
+                const snap = await db.collection('projets').get();
+                allProjects = [];
+                snap.forEach(d => allProjects.push({id:d.id,...d.data()}));
+            } catch (error) {
+                showLoading(false);
+                console.error('Erreur changement directeur:', error);
+                showToast('❌ Erreur : ' + error.message, 'danger');
+            }
+        }
+        
+        // ==================== INITIALISATION GÉNÉRALE ====================
+        async function init() {
+            console.log('🚀 SPA Académique - Initialisation');
+            
+            // Charger les données communes
+            await Promise.all([
+                chargerProfesseurs(),
+                chargerPromotionsCours()
+            ]);
+            
+            // Charger les données de chaque module
+            await chargerCours();
+            await chargerSeances();
+            
+            // Communiquer
+            await verifierSupportNotifications();
+            await chargerPromotionsCom();
+            await chargerCommuniques();
+            
+            // Dates par défaut pour communiquer
+            const today = new Date().toISOString().split('T')[0];
+            const in7Days = new Date(); in7Days.setDate(in7Days.getDate() + 7);
+            const comDebut = document.getElementById('comDateDebut');
+            const comFin = document.getElementById('comDateFin');
+            if (comDebut) comDebut.value = today;
+            if (comFin) comFin.value = in7Days.toISOString().split('T')[0];
+            
+            console.log('✅ SPA Académique prête');
+        }
+        
+        init().catch(e => console.error('❌ Erreur init:', e));
+        
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
             });
         }
-
     </script>
 </body>
 </html>
