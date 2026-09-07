@@ -17,9 +17,20 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
-    <!-- EmailJS -->
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+        if (window.eruda) {
+            eruda.init();
+            console.log('✅ Eruda console activée');
+        } else {
+            document.addEventListener('DOMContentLoaded', function () {
+                if (window.eruda) {
+                    eruda.init();
+                    console.log('✅ Eruda console activée');
+                }
+            });
+        }
+    </script>
+   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -331,6 +342,11 @@
             box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
         }
 
+        .verification-actions .btn-verify:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .verification-actions .btn-cancel {
             flex: 1;
             padding: 14px;
@@ -434,6 +450,31 @@
             font-weight: bold;
             margin: 0;
         }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 11px;
+            padding: 3px 12px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
+
+        .status-badge.online {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-badge.offline {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card { padding: 30px 20px; }
+            .verification-code-input input { width: 40px; height: 50px; font-size: 20px; }
+            .logo h2 { font-size: 20px; }
+        }
     </style>
 </head>
 <body>
@@ -441,16 +482,10 @@
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner">
             <div class="spinner"></div>
-            <p>⏳ Envoi du code en cours...</p>
+            <p id="loadingMessage">⏳ Envoi du code en cours...</p>
         </div>
     </div>
 
-    <div class="badge-offline" id="offlineIndicator" style="display: none;">
-        <span class="badge bg-warning text-dark">
-            <i class="bi bi-wifi-off"></i> Mode hors-ligne
-        </span>
-    </div>
-    
     <div id="toastContainer" class="toast-notification"></div>
 
     <div class="login-container">
@@ -460,21 +495,25 @@
                     <i class="bi bi-book-fill"></i>
                 </div>
                 <h2>Espace Académique <span class="auth-badge"><i class="bi bi-shield-lock-fill"></i> Sécurisé</span></h2>
-                <p>Faculté des Sciences Agronomiques <span class="twofa-badge"><i class="bi bi-shield-check"></i> 2FA</span></p>
+                <p>
+                    Faculté des Sciences Agronomiques 
+                    <span class="twofa-badge"><i class="bi bi-shield-check"></i> 2FA</span>
+                    <span id="statusBadge" class="status-badge online"><i class="bi bi-check-circle-fill"></i> En ligne</span>
+                </p>
             </div>
             
             <!-- Formulaire de connexion -->
             <div id="loginFormContainer">
                 <div id="alertMessage" class="alert-custom"></div>
                 
-                <form id="loginForm">
+                <form id="loginForm" autocomplete="off">
                     <div class="input-group-custom">
                         <i class="bi bi-envelope-fill"></i>
                         <input type="email" id="email" placeholder="Adresse email" autocomplete="off" required>
                     </div>
                     <div class="input-group-custom">
                         <i class="bi bi-lock-fill"></i>
-                        <input type="password" id="password" placeholder="Mot de passe" required>
+                        <input type="password" id="password" placeholder="Mot de passe" autocomplete="off" required>
                     </div>
                     <button type="submit" class="btn-login" id="loginBtn">
                         <i class="bi bi-box-arrow-in-right"></i> Se connecter
@@ -493,7 +532,7 @@
                         Afin de protéger votre compte, nous avons envoyé un code de vérification sur votre email.
                     </div>
                     
-                    <div class="code-sent-info show" id="codeSentInfo">
+                    <div class="code-sent-info" id="codeSentInfo">
                         <i class="bi bi-envelope-check-fill"></i>
                         <strong>Code envoyé à :</strong> <span id="verifEmail">---</span>
                         <br><small>Vérifiez votre boîte mail (y compris les spams).</small>
@@ -519,14 +558,14 @@
                     </div>
                     
                     <div id="codeError" style="display: none; color: #dc3545; font-size: 14px; margin-bottom: 10px;">
-                        <i class="bi bi-exclamation-circle"></i> Code invalide. Veuillez réessayer.
+                        <i class="bi bi-exclamation-circle"></i> <span id="codeErrorMessage">Code invalide. Veuillez réessayer.</span>
                     </div>
                     
                     <div class="verification-actions">
-                        <button class="btn-verify" id="btnVerifyCode" onclick="verifierCode()">
+                        <button class="btn-verify" id="btnVerifyCode">
                             <i class="bi bi-check-circle-fill"></i> Vérifier le code
                         </button>
-                        <button class="btn-cancel" onclick="annulerConnexion()">
+                        <button class="btn-cancel" id="btnCancel">
                             <i class="bi bi-x-circle"></i> Annuler
                         </button>
                     </div>
@@ -534,7 +573,7 @@
                     <div class="verification-timer">
                         <i class="bi bi-clock"></i> Code valable pendant <span id="timerCount">120</span> secondes
                         <br>
-                        <a class="resend-link" onclick="renvoyerCode()">Renvoyer le code</a>
+                        <a class="resend-link" id="resendLink">Renvoyer le code</a>
                     </div>
                 </div>
             </div>
@@ -551,20 +590,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
     
     <script>
-        // ============================================================
-        // ⭐ CONFIGURATION EMAILJS - VOS VRAIES VALEURS
-        // ============================================================
-        const EMAILJS_CONFIG = {
-            publicKey: 'wT5imuU9YJ4abDUca',
-            serviceID: 'service_irq5o0b',
-            templateID: 'template_n8fue2f'
-        };
-        
-        // Initialiser EmailJS
-        emailjs.init(EMAILJS_CONFIG.publicKey);
-        
         // ============================================================
         // ⭐ CONFIGURATION FIREBASE
         // ============================================================
@@ -580,6 +608,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+        const functions = firebase.functions();
         
         // ============================================================
         // ⭐ VARIABLES GLOBALES
@@ -587,93 +616,185 @@
         let currentEmail = '';
         let currentPassword = '';
         let currentUserData = null;
-        let currentCode = '';
         let codeExpireTimer = null;
         let timerSeconds = 120;
         let isVerifying = false;
+        let lastCodeSentAt = 0;
+        const COOLDOWN_MS = 60000;
+        
+        // ============================================================
+        // ⭐ FONCTIONS 2FA - APPEL DES CLOUD FUNCTIONS
+        // ============================================================
+        
+        async function callFunction(functionName, data) {
+            try {
+                console.log(`📞 Appel de ${functionName} avec:`, data);
+                
+                const callable = functions.httpsCallable(functionName);
+                const result = await callable(data);
+                
+                console.log(`✅ ${functionName} - Réponse:`, result.data);
+                return result.data;
+            } catch (error) {
+                console.error(`❌ Erreur ${functionName}:`, error);
+                
+                let message = 'Erreur inconnue';
+                
+                if (error.message) message = error.message;
+                if (error.details) message = error.details;
+                
+                if (error.code) {
+                    const errorMessages = {
+                        'permission-denied': 'Permission refusée',
+                        'not-found': 'Service non trouvé',
+                        'resource-exhausted': 'Trop de tentatives, veuillez patienter',
+                        'deadline-exceeded': 'Délai dépassé',
+                        'unauthenticated': 'Non authentifié',
+                        'invalid-argument': 'Données invalides',
+                        'failed-precondition': 'Précondition échouée',
+                        'internal': 'Erreur interne du serveur'
+                    };
+                    message = errorMessages[error.code] || message;
+                }
+                
+                throw new Error(message);
+            }
+        }
+        
+        // ============================================================
+        // ⭐ TEST DE CONNEXION AU BACKEND
+        // ============================================================
+        
+        async function testBackendConnection() {
+            try {
+                console.log('🔍 Test de connexion au backend...');
+                const status = await callFunction('status', {});
+                console.log('✅ Backend connecté:', status);
+                
+                const badge = document.getElementById('statusBadge');
+                if (status && status.success) {
+                    badge.className = 'status-badge online';
+                    badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> En ligne';
+                    showToast('✅ Backend connecté', 'success');
+                } else {
+                    badge.className = 'status-badge offline';
+                    badge.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> Hors ligne';
+                    showToast('⚠️ Backend non disponible', 'warning');
+                }
+                
+                return status;
+            } catch (error) {
+                console.error('❌ Erreur de connexion au backend:', error);
+                const badge = document.getElementById('statusBadge');
+                badge.className = 'status-badge offline';
+                badge.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> Hors ligne';
+                showToast('⚠️ Impossible de contacter le backend', 'danger');
+                return null;
+            }
+        }
         
         // ============================================================
         // ⭐ FONCTIONS 2FA
         // ============================================================
         
-        function genererCode() {
-            return Math.floor(100000 + Math.random() * 900000).toString();
+        async function sendVerificationCode(email) {
+            try {
+                const now = Date.now();
+                if (now - lastCodeSentAt < COOLDOWN_MS) {
+                    const remaining = Math.ceil((COOLDOWN_MS - (now - lastCodeSentAt)) / 1000);
+                    throw new Error(`Veuillez patienter ${remaining} secondes avant de renvoyer un code.`);
+                }
+                
+                showLoading(true, '⏳ Envoi du code en cours...');
+                
+                const result = await callFunction('sendVerificationCode', { email: email });
+                
+                showLoading(false);
+                
+                if (result && result.success) {
+                    lastCodeSentAt = Date.now();
+                    return { success: true, message: result.message || 'Code envoyé avec succès' };
+                } else {
+                    return { success: false, message: result?.message || 'Erreur inconnue lors de l\'envoi' };
+                }
+            } catch (error) {
+                showLoading(false);
+                console.error('❌ Erreur sendVerificationCode:', error);
+                return { success: false, message: error.message || 'Erreur lors de l\'envoi du code' };
+            }
         }
         
-        function showLoading(show) {
+        async function verifyCode(email, code) {
+            try {
+                const result = await callFunction('verifyVerificationCode', { email: email, code: code });
+                
+                if (result && result.success && result.verified) {
+                    return { success: true };
+                } else {
+                    return { success: false, message: result?.message || 'Code invalide' };
+                }
+            } catch (error) {
+                console.error('❌ Erreur verifyCode:', error);
+                return { success: false, message: error.message || 'Erreur lors de la vérification' };
+            }
+        }
+        
+        async function resendVerificationCode(email) {
+            try {
+                const now = Date.now();
+                if (now - lastCodeSentAt < COOLDOWN_MS) {
+                    const remaining = Math.ceil((COOLDOWN_MS - (now - lastCodeSentAt)) / 1000);
+                    throw new Error(`Veuillez patienter ${remaining} secondes avant de renvoyer un code.`);
+                }
+                
+                showLoading(true, '⏳ Renvoi du code en cours...');
+                
+                const result = await callFunction('resendVerificationCode', { email: email });
+                
+                showLoading(false);
+                
+                if (result && result.success) {
+                    lastCodeSentAt = Date.now();
+                    return { success: true, message: result.message || 'Code renvoyé avec succès' };
+                } else {
+                    return { success: false, message: result?.message || 'Erreur inconnue lors du renvoi' };
+                }
+            } catch (error) {
+                showLoading(false);
+                console.error('❌ Erreur resendVerificationCode:', error);
+                return { success: false, message: error.message || 'Erreur lors du renvoi du code' };
+            }
+        }
+        
+        // ============================================================
+        // ⭐ FONCTIONS 2FA UI
+        // ============================================================
+        
+        function showLoading(show, message = '⏳ Envoi du code en cours...') {
             const overlay = document.getElementById('loadingOverlay');
+            const msg = document.getElementById('loadingMessage');
             if (show) {
+                msg.textContent = message;
                 overlay.classList.add('active');
             } else {
                 overlay.classList.remove('active');
             }
         }
         
-        // ⭐ ENVOYER LE CODE PAR EMAIL VIA EMAILJS
-        async function envoyerCodeParEmail(email, code, nom) {
-            try {
-                showLoading(true);
-                
-                const templateParams = {
-                    to_name: nom || 'Académique',
-                    code: code,
-                    email: email
-                };
-                
-                console.log('📧 Envoi du code par EmailJS...');
-                console.log('📧 Email:', email);
-                console.log('🔐 Code:', code);
-                console.log('📧 Paramètres:', templateParams);
-                
-                const response = await emailjs.send(
-                    EMAILJS_CONFIG.serviceID,
-                    EMAILJS_CONFIG.templateID,
-                    templateParams
-                );
-                
-                console.log('✅ Email envoyé avec succès!', response);
-                showLoading(false);
-                
-                // Stocker le code dans Firestore
-                const docId = `${email}_${Date.now()}`;
-                await db.collection('verificationCodes').doc(docId).set({
-                    email: email,
-                    code: code,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    expiresAt: new Date(Date.now() + 120000),
-                    used: false
-                });
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Erreur envoi email:', error);
-                console.error('❌ Détails:', error.text);
-                showLoading(false);
-                showToast('❌ Erreur envoi email: ' + (error.text || error.message), 'danger');
-                return false;
-            }
-        }
-        
         async function envoyerCode() {
             if (!currentEmail) return false;
             
-            currentCode = genererCode();
             showToast('📧 Envoi du code en cours...', 'info');
             
-            const success = await envoyerCodeParEmail(
-                currentEmail, 
-                currentCode, 
-                currentUserData?.nomComplet || 'Académique'
-            );
+            const result = await sendVerificationCode(currentEmail);
             
-            if (success) {
+            if (result.success) {
                 document.getElementById('verifEmail').textContent = currentEmail;
                 document.getElementById('codeSentInfo').classList.add('show');
-                showToast('✅ Code envoyé sur votre email', 'success');
+                showToast('✅ ' + result.message, 'success');
                 return true;
             } else {
-                showToast('❌ Erreur lors de l\'envoi du code', 'danger');
+                showToast('❌ ' + result.message, 'danger');
                 return false;
             }
         }
@@ -694,6 +815,7 @@
             
             timerSeconds = 120;
             document.getElementById('timerCount').textContent = timerSeconds;
+            document.getElementById('btnVerifyCode').disabled = false;
             
             if (codeExpireTimer) clearInterval(codeExpireTimer);
             codeExpireTimer = setInterval(() => {
@@ -717,40 +839,51 @@
             isVerifying = false;
             currentEmail = '';
             currentPassword = '';
-            currentCode = '';
+            currentUserData = null;
             document.getElementById('codeSentInfo').classList.remove('show');
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginBtn').innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Se connecter';
         }
         
-        function renvoyerCode() {
+        async function renvoyerCode() {
             if (isVerifying) return;
+            if (!currentEmail) {
+                showToast('❌ Email non disponible', 'danger');
+                return;
+            }
             
-            currentCode = genererCode();
-            envoyerCodeParEmail(currentEmail, currentCode, currentUserData?.nomComplet || 'Académique');
+            showToast('📧 Renvoi du code en cours...', 'info');
             
-            timerSeconds = 120;
-            document.getElementById('timerCount').textContent = timerSeconds;
-            document.getElementById('btnVerifyCode').disabled = false;
+            const result = await resendVerificationCode(currentEmail);
             
-            if (codeExpireTimer) clearInterval(codeExpireTimer);
-            codeExpireTimer = setInterval(() => {
-                timerSeconds--;
+            if (result.success) {
+                timerSeconds = 120;
                 document.getElementById('timerCount').textContent = timerSeconds;
-                if (timerSeconds <= 0) {
-                    clearInterval(codeExpireTimer);
-                    document.getElementById('timerCount').textContent = '0';
-                    document.getElementById('btnVerifyCode').disabled = true;
-                    showToast('⏰ Le code a expiré. Cliquez sur "Renvoyer".', 'warning');
-                }
-            }, 1000);
-            
-            document.querySelectorAll('.verification-code-input input').forEach(input => {
-                input.value = '';
-                input.className = '';
-            });
-            document.getElementById('codeError').style.display = 'none';
-            document.getElementById('code1').focus();
-            
-            showToast('📧 Nouveau code envoyé', 'success');
+                document.getElementById('btnVerifyCode').disabled = false;
+                
+                if (codeExpireTimer) clearInterval(codeExpireTimer);
+                codeExpireTimer = setInterval(() => {
+                    timerSeconds--;
+                    document.getElementById('timerCount').textContent = timerSeconds;
+                    if (timerSeconds <= 0) {
+                        clearInterval(codeExpireTimer);
+                        document.getElementById('timerCount').textContent = '0';
+                        document.getElementById('btnVerifyCode').disabled = true;
+                        showToast('⏰ Le code a expiré. Cliquez sur "Renvoyer".', 'warning');
+                    }
+                }, 1000);
+                
+                document.querySelectorAll('.verification-code-input input').forEach(input => {
+                    input.value = '';
+                    input.className = '';
+                });
+                document.getElementById('codeError').style.display = 'none';
+                document.getElementById('code1').focus();
+                
+                showToast('📧 ' + result.message, 'success');
+            } else {
+                showToast('❌ ' + result.message, 'danger');
+            }
         }
         
         function getCodeFromInputs() {
@@ -773,7 +906,7 @@
             
             if (codeSaisi.length !== 6) {
                 document.getElementById('codeError').style.display = 'block';
-                document.getElementById('codeError').innerHTML = '<i class="bi bi-exclamation-circle"></i> Veuillez entrer les 6 chiffres du code.';
+                document.getElementById('codeErrorMessage').textContent = 'Veuillez entrer les 6 chiffres du code.';
                 return;
             }
             
@@ -783,15 +916,19 @@
             btn.disabled = true;
             
             try {
-                const snapshot = await db.collection('verificationCodes')
-                    .where('email', '==', currentEmail)
-                    .where('code', '==', codeSaisi)
-                    .where('used', '==', false)
-                    .get();
+                const result = await verifyCode(currentEmail, codeSaisi);
                 
-                if (snapshot.empty) {
+                if (result.success) {
+                    document.querySelectorAll('.verification-code-input input').forEach(input => {
+                        input.classList.add('correct');
+                    });
+                    
+                    document.getElementById('codeError').style.display = 'none';
+                    clearInterval(codeExpireTimer);
+                    await finaliserConnexion();
+                } else {
                     document.getElementById('codeError').style.display = 'block';
-                    document.getElementById('codeError').innerHTML = '<i class="bi bi-exclamation-circle"></i> Code invalide ou expiré.';
+                    document.getElementById('codeErrorMessage').textContent = result.message || 'Code invalide ou expiré.';
                     
                     document.querySelectorAll('.verification-code-input input').forEach(input => {
                         input.classList.add('error');
@@ -801,27 +938,10 @@
                     isVerifying = false;
                     btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Vérifier le code';
                     btn.disabled = false;
-                    return;
                 }
-                
-                snapshot.forEach(async doc => {
-                    await doc.ref.update({
-                        used: true,
-                        verifiedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                });
-                
-                document.querySelectorAll('.verification-code-input input').forEach(input => {
-                    input.classList.add('correct');
-                });
-                
-                document.getElementById('codeError').style.display = 'none';
-                clearInterval(codeExpireTimer);
-                await finaliserConnexion();
-                
             } catch (error) {
                 console.error('Erreur vérification:', error);
-                showToast('❌ Erreur: ' + error.message, 'danger');
+                showToast('❌ Erreur: ' + (error.message || 'Erreur inconnue'), 'danger');
                 isVerifying = false;
                 btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Vérifier le code';
                 btn.disabled = false;
@@ -830,6 +950,9 @@
         
         async function finaliserConnexion() {
             try {
+                showToast('✅ Code vérifié ! Connexion en cours...', 'success');
+                showLoading(true, '⏳ Connexion en cours...');
+                
                 const userCredential = await auth.signInWithEmailAndPassword(currentEmail, currentPassword);
                 const uid = userCredential.user.uid;
                 
@@ -839,6 +962,7 @@
                     showToast('❌ Compte non trouvé', 'danger');
                     await auth.signOut();
                     annulerConnexion();
+                    showLoading(false);
                     return;
                 }
                 
@@ -848,10 +972,10 @@
                     showToast('❌ Accès non autorisé', 'danger');
                     await auth.signOut();
                     annulerConnexion();
+                    showLoading(false);
                     return;
                 }
                 
-                // ⭐ SESSION 8 HEURES
                 const sessionData = {
                     uid: uid,
                     id: uid,
@@ -859,7 +983,7 @@
                     email: userData.email,
                     role: userData.role,
                     verified2FA: true,
-                    expires: Date.now() + (8 * 60 * 60 * 1000) // 8 heures
+                    expires: Date.now() + (8 * 60 * 60 * 1000)
                 };
                 
                 localStorage.setItem('session_academique', JSON.stringify(sessionData));
@@ -868,15 +992,17 @@
                     derniereConnexion: firebase.firestore.FieldValue.serverTimestamp()
                 }).catch(() => {});
                 
-                showToast('✅ Connexion réussie !', 'success');
+                showLoading(false);
+                showToast('✅ Connexion réussie ! Redirection...', 'success');
                 
                 setTimeout(() => {
                     window.location.href = 'academique.html';
-                }, 1000);
+                }, 1500);
                 
             } catch (error) {
+                showLoading(false);
                 console.error('Erreur finalisation:', error);
-                showToast('❌ Erreur: ' + error.message, 'danger');
+                showToast('❌ Erreur: ' + (error.message || 'Erreur inconnue'), 'danger');
                 annulerConnexion();
             }
         }
@@ -953,22 +1079,18 @@
         
         function showAlert(message, isError = true) {
             const alertDiv = document.getElementById('alertMessage');
-            const className = isError ? 'alert-custom' : 'alert-success-custom';
-            const icon = isError ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill';
-            
-            alertDiv.innerHTML = `
-                <div class="${className}">
-                    <i class="bi ${icon}"></i>
-                    ${message}
-                </div>
-            `;
-            alertDiv.style.display = 'block';
             
             if (isError) {
+                alertDiv.className = 'alert-custom';
+                alertDiv.style.display = 'block';
+                alertDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${message}`;
                 setTimeout(() => {
                     alertDiv.style.display = 'none';
                 }, 5000);
             } else {
+                alertDiv.className = 'alert-custom alert-success-custom';
+                alertDiv.style.display = 'block';
+                alertDiv.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${message}`;
                 setTimeout(() => {
                     alertDiv.style.display = 'none';
                 }, 3000);
@@ -1021,7 +1143,7 @@
                     return;
                 }
                 
-                // 2. Vérifier le mot de passe via Auth
+                // 2. Vérifier le mot de passe via Firebase Auth
                 try {
                     const tempUser = await auth.signInWithEmailAndPassword(email, password);
                     await auth.signOut();
@@ -1075,7 +1197,7 @@
                 
             } catch (error) {
                 console.error('Erreur de connexion:', error);
-                showAlert('❌ Erreur: ' + error.message);
+                showAlert('❌ Erreur: ' + (error.message || 'Erreur inconnue'));
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
@@ -1107,7 +1229,11 @@
         // ⭐ INITIALISATION
         // ============================================================
         
+        // Attacher les événements
         document.getElementById('loginForm').addEventListener('submit', login);
+        document.getElementById('btnVerifyCode').addEventListener('click', verifierCode);
+        document.getElementById('btnCancel').addEventListener('click', annulerConnexion);
+        document.getElementById('resendLink').addEventListener('click', renvoyerCode);
         
         // Vérifier si l'utilisateur a déjà une session
         if (!checkExistingSession()) {
@@ -1122,14 +1248,20 @@
             if (e.key === 'Enter') document.getElementById('loginBtn').click();
         });
         
-        // Exposer les fonctions globalement
-        window.verifierCode = verifierCode;
-        window.annulerConnexion = annulerConnexion;
-        window.renvoyerCode = renvoyerCode;
+        // Tester la connexion au backend au chargement
+        window.addEventListener('load', async () => {
+            console.log('✅ Page de connexion Académique - Backend Cloud Functions');
+            console.log('🔐 Fonctions disponibles:');
+            console.log('   - sendVerificationCode');
+            console.log('   - resendVerificationCode');
+            console.log('   - verifyVerificationCode');
+            console.log('   - testEmailJS');
+            console.log('   - status');
+            
+            await testBackendConnection();
+        });
         
-        console.log('✅ Page de connexion Académique - Sécurisée avec Firebase Auth + 2FA EmailJS');
-        console.log('📧 Service ID:', EMAILJS_CONFIG.serviceID);
-        console.log('📧 Template ID:', EMAILJS_CONFIG.templateID);
+     
         
         // Service Worker
         if ('serviceWorker' in navigator) {
@@ -1137,6 +1269,8 @@
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
             });
         }
+        
+        console.log('🎯 Votre système 2FA est prêt !');
     </script>
 </body>
 </html>
