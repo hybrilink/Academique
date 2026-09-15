@@ -232,25 +232,28 @@
         }
         .btn-delete:hover { background: #c82333; }
 
+        /* ✅ BOUTON IMPRIMER */
         .btn-print {
             background: linear-gradient(135deg, #17a2b8, #138496);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            margin-right: 6px;
+            gap: 8px;
         }
         .btn-print:hover {
             background: linear-gradient(135deg, #138496, #0c5460);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+        }
+        .btn-print:active {
+            transform: translateY(0);
         }
         
         .empty-state { text-align: center; padding: 60px 20px; color: #888; }
@@ -298,6 +301,7 @@
             color: #1b5e20;
         }
 
+        /* ✅ Ligne d'en-tête de semaine avec le bouton d'impression */
         .semaine-header-row {
             display: flex;
             justify-content: space-between;
@@ -312,12 +316,15 @@
             color: var(--primary-blue);
             margin: 0;
             flex: 1;
+            font-size: 15px;
         }
         
         @media (max-width: 768px) {
             .content-card { padding: 20px; }
             .card-header-custom { margin: -20px -20px 20px -20px; padding: 15px 20px; }
             .jours-grid { grid-template-columns: repeat(3, 1fr); }
+            .semaine-header-row { flex-direction: column; align-items: flex-start; }
+            .btn-print { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -534,8 +541,8 @@
         // ========== UTILITAIRES ==========
         function showToast(m, t='success') {
             const c = document.getElementById('toastContainer');
-            const bg = t==='success'?'#28a745':t==='warning'?'#ffc107':'#dc3545';
-            const ic = t==='success'?'check-circle-fill':t==='warning'?'exclamation-triangle-fill':'x-circle-fill';
+            const bg = t==='success'?'#28a745':t==='warning'?'#ffc107':t==='info'?'#17a2b8':'#dc3545';
+            const ic = t==='success'?'check-circle-fill':t==='warning'?'exclamation-triangle-fill':t==='info'?'info-circle-fill':'x-circle-fill';
             const tc = t==='warning'?'#333':'white';
             c.insertAdjacentHTML('afterbegin',`<div class="toast" style="background:${bg};color:${tc};border-radius:10px;margin-bottom:10px;"><div class="toast-body"><i class="bi bi-${ic} me-2"></i>${m}</div></div>`);
             setTimeout(()=>{if(c.firstElementChild)c.firstElementChild.remove();},4000);
@@ -868,7 +875,7 @@
             });
         }
         
-        // ========== AFFICHAGE DES HORAIRES ==========
+        // ========== AFFICHAGE DES HORAIRES AVEC BOUTON IMPRIMER ==========
         function afficherHoraires() {
             const container = document.getElementById('horairesContainer');
             if(allHoraires.length===0) {
@@ -884,6 +891,7 @@
                     const fin = h.semaineFin ? new Date(h.semaineFin) : null;
                     const expiree = fin && maintenant > fin;
                     
+                    // ✅ LIGNE D'EN-TÊTE AVEC BOUTON IMPRIMER
                     html += `
                         <div class="mb-4">
                             <div class="semaine-header-row">
@@ -925,18 +933,8 @@
         };
         
         // ================================================================
-        // ✅ IMPRESSION : Format avec colonne HEURE dédiée
-        // 
-        // Structure du tableau :
-        // ┌───────────┬────────┬─────────┬─────────┬───┬─────────┬─────────┐
-        // │ PROMOTION │ HEURE  │ LOCAL   │ LUNDI   │...│ VENDREDI│ SAMEDI  │
-        // ├───────────┼────────┼─────────┼─────────┼───┼─────────┼─────────┤
-        // │           │ 08h-12h│         │ Cours 1 │   │         │         │
-        // │           │ 13h-17h│ D101    │ Cours 2 │   │         │         │
-        // │ Bac 1 AGE ├────────┼─────────┼─────────┼───┼─────────┼─────────┤
-        // │           │ 08h-12h│ B101    │ Cours 1 │   │         │         │
-        // │           │ 13h-17h│         │ Cours 2 │   │         │         │
-        // └───────────┴────────┴─────────┴─────────┴───┴─────────┴─────────┘
+        // ✅ IMPRESSION DE LA SEMAINE
+        // Format avec colonne HEURE dédiée (2ème position)
         // ================================================================
         window.imprimerSemaine = function(semaineId) {
             const horairesSemaine = allHoraires.filter(h => h.semaineId === semaineId);
@@ -958,7 +956,7 @@
             const dateDebut = formatDateFr(semaine.debutISO);
             const dateFin = formatDateFr(semaine.finISO);
             
-            // ⭐ Grouper par promotion
+            // Grouper par promotion
             const parPromotion = {};
             horairesSemaine.forEach(h => {
                 const promoId = h.promotionId;
@@ -974,7 +972,7 @@
             let ticketsHTML = '';
             
             Object.values(parPromotion).forEach(promoData => {
-                // ⭐ Grouper par SALLE pour créer les lignes
+                // Grouper par salle
                 const parSalle = {};
                 promoData.creneaux.forEach(c => {
                     const salle = c.salle || 'Non spécifiée';
@@ -982,13 +980,10 @@
                     parSalle[salle].push(c);
                 });
                 
-                // ⭐ Pour chaque salle, regrouper les heures par créneau distinct
-                // On va construire une liste de "lignes horaires" 
-                // Chaque ligne aura : une heure début/fin + un cours par jour
+                // Construire les lignes horaires par salle
                 const lignesParSalle = {};
                 
                 Object.entries(parSalle).forEach(([salle, creneauxSalle]) => {
-                    // Trouver tous les créneaux horaires uniques (debut-fin)
                     const creneauxUniques = {};
                     creneauxSalle.forEach(c => {
                         const key = `${c.debut}_${c.fin}`;
@@ -999,26 +994,23 @@
                                 jours: {}
                             };
                         }
-                        // Pour ce créneau, ajouter les cours du jour
                         if(!creneauxUniques[key].jours[c.jour]) {
                             creneauxUniques[key].jours[c.jour] = [];
                         }
                         creneauxUniques[key].jours[c.jour].push(c);
                     });
                     
-                    // Trier par heure de début
                     lignesParSalle[salle] = Object.values(creneauxUniques).sort((a, b) => 
                         (a.debut || '').localeCompare(b.debut || '')
                     );
                 });
                 
-                // ⭐ Construire les lignes HTML
                 let lignesHTML = '';
                 const salles = Object.keys(lignesParSalle);
                 const nbLignesTotal = salles.reduce((total, salle) => total + lignesParSalle[salle].length, 0);
                 let ligneIndex = 0;
                 
-                salles.forEach((salle, salleIndex) => {
+                salles.forEach((salle) => {
                     const lignesSalle = lignesParSalle[salle];
                     const nbLignesSalle = lignesSalle.length;
                     
@@ -1045,7 +1037,6 @@
                             }
                         });
                         
-                        // Heure au format "08h-12h"
                         const heureAffichee = (ligne.debut || '').replace(':', 'h') + 
                                               '-' + 
                                               (ligne.fin || '').replace(':', 'h');
@@ -1126,241 +1117,46 @@
                     <title>Horaire des cours - ${semaine.label}</title>
                     <style>
                         * { margin: 0; padding: 0; box-sizing: border-box; }
-                        
-                        body {
-                            font-family: 'Times New Roman', 'Segoe UI', serif;
-                            background: white;
-                            padding: 15px;
-                        }
-                        
-                        .ticket-horaire {
-                            background: white;
-                            border: 2px solid #003366;
-                            padding: 15px;
-                            margin-bottom: 20px;
-                            page-break-after: always;
-                        }
-                        
-                        .ticket-horaire:last-child {
-                            page-break-after: auto;
-                        }
-                        
-                        .ticket-header {
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            border-bottom: 2px solid #003366;
-                            padding-bottom: 10px;
-                            margin-bottom: 12px;
-                        }
-                        
-                        .ticket-header-left {
-                            display: flex;
-                            align-items: center;
-                            gap: 12px;
-                        }
-                        
-                        .ticket-logo {
-                            width: 55px;
-                            height: 55px;
-                            object-fit: contain;
-                        }
-                        
-                        .ticket-titles {
-                            display: flex;
-                            flex-direction: column;
-                        }
-                        
-                        .ticket-title-1 {
-                            font-size: 13px;
-                            font-weight: bold;
-                            color: #003366;
-                            letter-spacing: 0.5px;
-                        }
-                        
-                        .ticket-title-2 {
-                            font-size: 12px;
-                            font-weight: bold;
-                            color: #003366;
-                            letter-spacing: 0.5px;
-                        }
-                        
-                        .ticket-header-right {
-                            text-align: right;
-                            font-size: 12px;
-                            font-weight: bold;
-                            color: #003366;
-                        }
-                        
-                        .ticket-date {
-                            margin-bottom: 3px;
-                        }
-                        
-                        .ticket-main-title {
-                            text-align: center;
-                            font-size: 14px;
-                            font-weight: bold;
-                            color: #003366;
-                            letter-spacing: 2px;
-                            margin-bottom: 12px;
-                            text-transform: uppercase;
-                        }
-                        
-                        .ticket-table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            font-size: 9px;
-                        }
-                        
-                        .ticket-table th,
-                        .ticket-table td {
-                            border: 1px solid #003366;
-                            padding: 5px 4px;
-                            vertical-align: top;
-                        }
-                        
-                        .ticket-table thead th {
-                            background: #e8f0fa;
-                            color: #003366;
-                            font-weight: bold;
-                            text-align: center;
-                            font-size: 10px;
-                            padding: 8px 4px;
-                            text-transform: uppercase;
-                        }
-                        
+                        body { font-family: 'Times New Roman', 'Segoe UI', serif; background: white; padding: 15px; }
+                        .ticket-horaire { background: white; border: 2px solid #003366; padding: 15px; margin-bottom: 20px; page-break-after: always; }
+                        .ticket-horaire:last-child { page-break-after: auto; }
+                        .ticket-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #003366; padding-bottom: 10px; margin-bottom: 12px; }
+                        .ticket-header-left { display: flex; align-items: center; gap: 12px; }
+                        .ticket-logo { width: 55px; height: 55px; object-fit: contain; }
+                        .ticket-titles { display: flex; flex-direction: column; }
+                        .ticket-title-1 { font-size: 13px; font-weight: bold; color: #003366; letter-spacing: 0.5px; }
+                        .ticket-title-2 { font-size: 12px; font-weight: bold; color: #003366; letter-spacing: 0.5px; }
+                        .ticket-header-right { text-align: right; font-size: 12px; font-weight: bold; color: #003366; }
+                        .ticket-date { margin-bottom: 3px; }
+                        .ticket-main-title { text-align: center; font-size: 14px; font-weight: bold; color: #003366; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
+                        .ticket-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+                        .ticket-table th, .ticket-table td { border: 1px solid #003366; padding: 5px 4px; vertical-align: top; }
+                        .ticket-table thead th { background: #e8f0fa; color: #003366; font-weight: bold; text-align: center; font-size: 10px; padding: 8px 4px; text-transform: uppercase; }
                         .th-promotion { width: 10%; }
                         .th-heure { width: 8%; }
                         .th-salle { width: 7%; }
                         .th-jour { width: 12.5%; }
-                        
-                        .cell-promotion {
-                            background: #f0f5fa;
-                            font-weight: bold;
-                            color: #003366;
-                            text-align: center;
-                            vertical-align: middle;
-                            font-size: 11px;
-                        }
-                        
-                        .cell-heure {
-                            background: #fff8e1;
-                            font-weight: bold;
-                            color: #c62828;
-                            text-align: center;
-                            vertical-align: middle;
-                            font-size: 10px;
-                            white-space: nowrap;
-                        }
-                        
-                        .cell-salle {
-                            background: #fafafa;
-                            font-weight: bold;
-                            color: #003366;
-                            text-align: center;
-                            vertical-align: middle;
-                            font-size: 10px;
-                        }
-                        
-                        .cell-jour {
-                            background: white;
-                            padding: 4px !important;
-                        }
-                        
-                        .cell-jour.empty {
-                            background: #fafafa;
-                        }
-                        
-                        .cours-bloc {
-                            margin-bottom: 4px;
-                            padding-bottom: 3px;
-                            border-bottom: 1px dashed #e0e0e0;
-                        }
-                        
-                        .cours-bloc:last-child {
-                            margin-bottom: 0;
-                            padding-bottom: 0;
-                            border-bottom: none;
-                        }
-                        
-                        .cours-nom {
-                            font-size: 9px;
-                            font-weight: bold;
-                            color: #003366;
-                            line-height: 1.15;
-                            margin-bottom: 2px;
-                        }
-                        
-                        .cours-prof {
-                            font-size: 8px;
-                            color: #555;
-                            font-style: italic;
-                        }
-                        
-                        .ticket-footer {
-                            margin-top: 15px;
-                            display: flex;
-                            justify-content: flex-end;
-                        }
-                        
-                        .ticket-signature {
-                            text-align: center;
-                            min-width: 180px;
-                        }
-                        
-                        .signature-titre {
-                            font-size: 11px;
-                            font-weight: bold;
-                            color: #003366;
-                            margin-bottom: 3px;
-                            text-transform: uppercase;
-                        }
-                        
-                        .signature-date {
-                            font-size: 10px;
-                            color: #555;
-                            margin-bottom: 25px;
-                        }
-                        
-                        .signature-ligne {
-                            border-top: 1px solid #003366;
-                            padding-top: 3px;
-                            font-size: 9px;
-                            color: #003366;
-                        }
-                        
-                        .ticket-bottom {
-                            margin-top: 10px;
-                            padding-top: 6px;
-                            border-top: 1px dashed #ccc;
-                            display: flex;
-                            justify-content: space-between;
-                            font-size: 7px;
-                            color: #999;
-                        }
-                        
+                        .cell-promotion { background: #f0f5fa; font-weight: bold; color: #003366; text-align: center; vertical-align: middle; font-size: 11px; }
+                        .cell-heure { background: #fff8e1; font-weight: bold; color: #c62828; text-align: center; vertical-align: middle; font-size: 10px; white-space: nowrap; }
+                        .cell-salle { background: #fafafa; font-weight: bold; color: #003366; text-align: center; vertical-align: middle; font-size: 10px; }
+                        .cell-jour { background: white; padding: 4px !important; }
+                        .cell-jour.empty { background: #fafafa; }
+                        .cours-bloc { margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px dashed #e0e0e0; }
+                        .cours-bloc:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+                        .cours-nom { font-size: 9px; font-weight: bold; color: #003366; line-height: 1.15; margin-bottom: 2px; }
+                        .cours-prof { font-size: 8px; color: #555; font-style: italic; }
+                        .ticket-footer { margin-top: 15px; display: flex; justify-content: flex-end; }
+                        .ticket-signature { text-align: center; min-width: 180px; }
+                        .signature-titre { font-size: 11px; font-weight: bold; color: #003366; margin-bottom: 3px; text-transform: uppercase; }
+                        .signature-date { font-size: 10px; color: #555; margin-bottom: 25px; }
+                        .signature-ligne { border-top: 1px solid #003366; padding-top: 3px; font-size: 9px; color: #003366; }
+                        .ticket-bottom { margin-top: 10px; padding-top: 6px; border-top: 1px dashed #ccc; display: flex; justify-content: space-between; font-size: 7px; color: #999; }
                         @media print {
-                            body { 
-                                padding: 8mm;
-                                background: white;
-                            }
-                            .ticket-horaire {
-                                margin-bottom: 0;
-                                page-break-after: always;
-                                border: 1.5px solid #003366;
-                            }
-                            .ticket-horaire:last-child {
-                                page-break-after: auto;
-                            }
-                            * {
-                                -webkit-print-color-adjust: exact !important;
-                                print-color-adjust: exact !important;
-                                color-adjust: exact !important;
-                            }
-                            @page {
-                                size: A4 landscape;
-                                margin: 5mm;
-                            }
+                            body { padding: 8mm; background: white; }
+                            .ticket-horaire { margin-bottom: 0; page-break-after: always; border: 1.5px solid #003366; }
+                            .ticket-horaire:last-child { page-break-after: auto; }
+                            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+                            @page { size: A4 landscape; margin: 5mm; }
                         }
                     </style>
                 </head>
