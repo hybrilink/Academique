@@ -232,6 +232,23 @@
         }
         .btn-delete:hover { background: #c82333; }
 
+        /* ✅ BOUTON MODIFIER */
+        .btn-edit {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #333;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        .btn-edit:hover { background: linear-gradient(135deg, #e0a800, #c69500); transform: translateY(-2px); }
+
+        .action-cell { display: flex; gap: 5px; flex-wrap: wrap; }
+
         /* ✅ BOUTON IMPRIMER */
         .btn-print {
             background: linear-gradient(135deg, #17a2b8, #138496);
@@ -301,7 +318,6 @@
             color: #1b5e20;
         }
 
-        /* ✅ Ligne d'en-tête de semaine avec le bouton d'impression */
         .semaine-header-row {
             display: flex;
             justify-content: space-between;
@@ -463,6 +479,79 @@
         </div>
     </div>
     
+    <!-- ✅ MODALE DE MODIFICATION -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius:15px;overflow:hidden;">
+                <div class="modal-header" style="background:linear-gradient(135deg,#003366,#002244);color:white;">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Modifier / Republier un horaire</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body" style="padding:25px;">
+                    <input type="hidden" id="editId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-calendar-range"></i> Semaine</label>
+                        <select class="form-select" id="editSemaine"></select>
+                        <small class="text-muted">Vous pouvez republier cet horaire pour une autre semaine.</small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="bi bi-trophy-fill"></i> Promotion</label>
+                            <select class="form-select" id="editPromotion"></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="bi bi-book-fill"></i> Cours</label>
+                            <select class="form-select" id="editCours"></select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="bi bi-calendar-day"></i> Jour</label>
+                            <select class="form-select" id="editJour">
+                                <option value="Lundi">Lundi</option>
+                                <option value="Mardi">Mardi</option>
+                                <option value="Mercredi">Mercredi</option>
+                                <option value="Jeudi">Jeudi</option>
+                                <option value="Vendredi">Vendredi</option>
+                                <option value="Samedi">Samedi</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="bi bi-clock-fill"></i> Heure début</label>
+                            <input type="time" class="form-control" id="editDebut">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="bi bi-clock-fill"></i> Heure fin</label>
+                            <input type="time" class="form-control" id="editFin">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-geo-alt-fill"></i> Salle / Local</label>
+                        <input type="text" class="form-control" id="editSalle" placeholder="Ex: Salle 101, Labo...">
+                    </div>
+                    
+                    <div class="conflit-alert" id="editConflitAlert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span id="editConflitMessage"></span>
+                    </div>
+                    
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn-submit" id="saveEditBtn" style="flex:1;">
+                            <i class="bi bi-save-fill"></i> Enregistrer les modifications
+                        </button>
+                        <button type="button" class="btn-submit" id="republierBtn" style="flex:1;background:linear-gradient(135deg,#28a745,#1e7e34);">
+                            <i class="bi bi-cloud-upload-fill"></i> Republier pour la semaine choisie
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="container">
         <div class="footer-info">
             <i class="bi bi-shield-check"></i> HYBRILINK-TECH - Votre partenaire digital de A à Z<br>
@@ -470,6 +559,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // ========== FIREBASE ==========
         const firebaseConfig = {
@@ -494,6 +584,7 @@
         let panier = [];
         let unsubscribeHoraires = null;
         let semainesDisponibles = [];
+        let editModalInstance = null;
         
         // ========== GÉNÉRATION SEMAINES ==========
         function getLundiDate(date, decalage = 0) {
@@ -509,7 +600,8 @@
         function genererSemaines() {
             const semaines = [];
             const maintenant = new Date();
-            for (let i = 0; i <= 2; i++) {
+            // On génère plus de semaines (passées récentes + futures) pour permettre la republication
+            for (let i = -4; i <= 8; i++) {
                 const debut = getLundiDate(maintenant, i);
                 const fin = new Date(debut);
                 fin.setDate(fin.getDate() + 5);
@@ -520,7 +612,8 @@
                     debut, fin,
                     label: `Semaine du ${debutStr} au ${finStr}`,
                     debutISO: debut.toISOString().split('T')[0],
-                    finISO: fin.toISOString().split('T')[0]
+                    finISO: fin.toISOString().split('T')[0],
+                    decalage: i
                 });
             }
             return semaines;
@@ -557,13 +650,22 @@
         function initSemainesSelect() {
             semainesDisponibles = genererSemaines();
             const sel = document.getElementById('semaineSelect');
-            semainesDisponibles.forEach((s,i) => {
-                sel.innerHTML += `<option value="${s.id}">${i===0?'📍 ':''}${s.label}</option>`;
+            sel.innerHTML = '<option value="">-- Sélectionner une semaine --</option>';
+            
+            // Par défaut on met la semaine courante (décalage 0)
+            let semaineCourante = null;
+            semainesDisponibles.forEach(s => {
+                let suffixe = '';
+                if (s.decalage === 0) { suffixe = ' (En cours)'; semaineCourante = s; }
+                else if (s.decalage < 0) suffixe = ' (Passée)';
+                else suffixe = ' (À venir)';
+                sel.innerHTML += `<option value="${s.id}">${s.label}${suffixe}</option>`;
             });
-            if(semainesDisponibles.length>0) {
-                sel.value = semainesDisponibles[0].id;
-                selectedSemaineId = semainesDisponibles[0].id;
-                updateSemaineInfo(semainesDisponibles[0]);
+            
+            if (semaineCourante) {
+                sel.value = semaineCourante.id;
+                selectedSemaineId = semaineCourante.id;
+                updateSemaineInfo(semaineCourante);
             }
         }
         
@@ -635,10 +737,11 @@
         }
         
         // ========== VÉRIFICATION CONFLIT ==========
-        function verifierConflitHeures(jour, debut, fin, professeurId) {
+        function verifierConflitHeures(jour, debut, fin, professeurId, ignorerId = null) {
             if (!selectedSemaineId || !professeurId) return null;
             
             return allHoraires.find(h => {
+                if (ignorerId && h.id === ignorerId) return false;
                 if (h.semaineId !== selectedSemaineId) return false;
                 if (h.jour !== jour) return false;
                 if (h.professeurId !== professeurId) return false;
@@ -646,11 +749,12 @@
             }) || null;
         }
         
-        function verifierConflitSalle(jour, debut, fin, salle) {
+        function verifierConflitSalle(jour, debut, fin, salle, ignorerId = null) {
             if (!selectedSemaineId || !salle || salle === 'Non spécifiée') return null;
             const salleLower = salle.toLowerCase();
             
             return allHoraires.find(h => {
+                if (ignorerId && h.id === ignorerId) return false;
                 if (h.semaineId !== selectedSemaineId) return false;
                 if (h.jour !== jour) return false;
                 if ((h.salle || '').toLowerCase() !== salleLower) return false;
@@ -875,7 +979,7 @@
             });
         }
         
-        // ========== AFFICHAGE DES HORAIRES AVEC BOUTON IMPRIMER ==========
+        // ========== AFFICHAGE DES HORAIRES ==========
         function afficherHoraires() {
             const container = document.getElementById('horairesContainer');
             if(allHoraires.length===0) {
@@ -891,7 +995,6 @@
                     const fin = h.semaineFin ? new Date(h.semaineFin) : null;
                     const expiree = fin && maintenant > fin;
                     
-                    // ✅ LIGNE D'EN-TÊTE AVEC BOUTON IMPRIMER
                     html += `
                         <div class="mb-4">
                             <div class="semaine-header-row">
@@ -914,13 +1017,26 @@
                                             <th>Promotion</th>
                                             <th>Professeur</th>
                                             <th>Salle</th>
-                                            <th style="width:80px;"></th>
+                                            <th style="width:140px;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                     `;
                 }
-                html += `<tr><td><span class="badge-jour ${h.jour}">${h.jour}</span></td><td><strong>${h.debut} - ${h.fin}</strong></td><td><span class="badge-cours"><i class="bi bi-book-fill"></i> ${escapeHtml(h.coursNom)}</span></td><td><span class="badge-promo"><i class="bi bi-trophy-fill"></i> ${escapeHtml(h.promotionNom)}</span></td><td><i class="bi bi-person-fill"></i> ${escapeHtml(h.professeurNom)}</td><td>${escapeHtml(h.salle)}</td><td><button class="btn-delete" onclick="supprimerHoraire('${h.id}')"><i class="bi bi-trash-fill"></i></button></td></tr>`;
+                html += `<tr>
+                    <td><span class="badge-jour ${h.jour}">${h.jour}</span></td>
+                    <td><strong>${h.debut} - ${h.fin}</strong></td>
+                    <td><span class="badge-cours"><i class="bi bi-book-fill"></i> ${escapeHtml(h.coursNom)}</span></td>
+                    <td><span class="badge-promo"><i class="bi bi-trophy-fill"></i> ${escapeHtml(h.promotionNom)}</span></td>
+                    <td><i class="bi bi-person-fill"></i> ${escapeHtml(h.professeurNom)}</td>
+                    <td>${escapeHtml(h.salle)}</td>
+                    <td>
+                        <div class="action-cell">
+                            <button class="btn-edit" onclick="ouvrirEditModal('${h.id}')" title="Modifier / Republier"><i class="bi bi-pencil-square"></i> Modifier</button>
+                            <button class="btn-delete" onclick="supprimerHoraire('${h.id}')" title="Supprimer"><i class="bi bi-trash-fill"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
             });
             if(curSem) html += '</tbody></table></div></div>';
             container.innerHTML = html;
@@ -932,9 +1048,182 @@
             showToast('Supprimé','warning');
         };
         
+        // ========== MODIFICATION / REPUBLICATION ==========
+        window.ouvrirEditModal = function(id) {
+            const h = allHoraires.find(x => x.id === id);
+            if(!h) { showToast('Horaire introuvable','danger'); return; }
+            
+            document.getElementById('editId').value = id;
+            
+            // Semaine
+            const selSem = document.getElementById('editSemaine');
+            selSem.innerHTML = '';
+            semainesDisponibles.forEach(s => {
+                let suffixe = '';
+                if (s.decalage === 0) suffixe = ' (En cours)';
+                else if (s.decalage < 0) suffixe = ' (Passée)';
+                else suffixe = ' (À venir)';
+                selSem.innerHTML += `<option value="${s.id}">${s.label}${suffixe}</option>`;
+            });
+            // Si la semaine de l'horaire n'est pas dans la liste, on l'ajoute
+            if(!semainesDisponibles.find(s => s.id === h.semaineId)) {
+                selSem.innerHTML += `<option value="${h.semaineId}">${escapeHtml(h.semaineLabel || h.semaineId)}</option>`;
+            }
+            selSem.value = h.semaineId || '';
+            
+            // Promotions
+            const selPromo = document.getElementById('editPromotion');
+            selPromo.innerHTML = '<option value="">-- Sélectionner --</option>';
+            allPromotions.forEach(p => {
+                selPromo.innerHTML += `<option value="${p.id}">${escapeHtml(p.nom)}</option>`;
+            });
+            selPromo.value = h.promotionId || '';
+            
+            // Cours (filtré par promotion)
+            remplirEditCours(h.promotionId, h.coursId);
+            
+            // Jour, heures, salle
+            document.getElementById('editJour').value = h.jour || 'Lundi';
+            document.getElementById('editDebut').value = h.debut || '';
+            document.getElementById('editFin').value = h.fin || '';
+            document.getElementById('editSalle').value = h.salle || '';
+            
+            document.getElementById('editConflitAlert').classList.remove('show');
+            
+            if(!editModalInstance) editModalInstance = new bootstrap.Modal(document.getElementById('editModal'));
+            editModalInstance.show();
+        };
+        
+        function remplirEditCours(promoId, coursIdSelectionne) {
+            const sel = document.getElementById('editCours');
+            sel.innerHTML = '<option value="">-- Sélectionner un cours --</option>';
+            if(!promoId) return;
+            const filtres = allCours.filter(c => c.promotionId === promoId);
+            filtres.forEach(c => {
+                sel.innerHTML += `<option value="${c.id}">${escapeHtml(c.nom)} (${c.credits||0} cr) - ${escapeHtml(c.professeurNom||'N/A')}</option>`;
+            });
+            if(coursIdSelectionne) sel.value = coursIdSelectionne;
+        }
+        
+        document.getElementById('editPromotion').addEventListener('change', function() {
+            remplirEditCours(this.value, null);
+        });
+        
+        // Sauvegarder les modifications (même semaine)
+        document.getElementById('saveEditBtn').addEventListener('click', async function() {
+            await enregistrerEdition(false);
+        });
+        
+        // Republier pour la semaine choisie
+        document.getElementById('republierBtn').addEventListener('click', async function() {
+            await enregistrerEdition(true);
+        });
+        
+        async function enregistrerEdition(estRepublication) {
+            const id = document.getElementById('editId').value;
+            const semaineId = document.getElementById('editSemaine').value;
+            const promoId = document.getElementById('editPromotion').value;
+            const coursId = document.getElementById('editCours').value;
+            const jour = document.getElementById('editJour').value;
+            const debut = document.getElementById('editDebut').value;
+            const fin = document.getElementById('editFin').value;
+            const salle = document.getElementById('editSalle').value.trim() || 'Non spécifiée';
+            
+            if(!semaineId) { showToast('Sélectionnez une semaine','warning'); return; }
+            if(!promoId) { showToast('Sélectionnez une promotion','warning'); return; }
+            if(!coursId) { showToast('Sélectionnez un cours','warning'); return; }
+            if(!debut || !fin) { showToast('Définissez les heures','warning'); return; }
+            if(debut >= fin) { showToast('Heure début < Heure fin','warning'); return; }
+            
+            const semaine = semainesDisponibles.find(s => s.id === semaineId) || 
+                            (allHoraires.find(h=>h.id===id) ? { 
+                                id: semaineId,
+                                label: allHoraires.find(h=>h.id===id).semaineLabel,
+                                debutISO: allHoraires.find(h=>h.id===id).semaineDebut,
+                                finISO: allHoraires.find(h=>h.id===id).semaineFin,
+                                fin: new Date(allHoraires.find(h=>h.id===id).semaineFin || Date.now())
+                            } : null);
+            
+            const cours = allCours.find(c => c.id === coursId);
+            if(!cours) { showToast('Cours introuvable','danger'); return; }
+            
+            const promotion = allPromotions.find(p => p.id === promoId);
+            
+            // Vérifier les conflits (en ignorant l'horaire en cours d'édition)
+            const conflitProf = allHoraires.find(h => {
+                if(h.id === id) return false;
+                if(h.semaineId !== semaineId) return false;
+                if(h.jour !== jour) return false;
+                if(h.professeurId !== (cours.professeurId || '')) return false;
+                return heuresChevauchent(debut, fin, h.debut, h.fin);
+            });
+            
+            if(conflitProf) {
+                document.getElementById('editConflitAlert').classList.add('show');
+                document.getElementById('editConflitMessage').innerHTML = 
+                    `<strong>⚠️ Conflit de créneau !</strong> <strong>${escapeHtml(conflitProf.professeurNom)}</strong> a déjà un cours le <strong>${jour}</strong> de <strong>${conflitProf.debut}</strong> à <strong>${conflitProf.fin}</strong>`;
+                return;
+            }
+            
+            const conflitSalle = allHoraires.find(h => {
+                if(h.id === id) return false;
+                if(h.semaineId !== semaineId) return false;
+                if(h.jour !== jour) return false;
+                if((h.salle || '').toLowerCase() !== salle.toLowerCase()) return false;
+                return heuresChevauchent(debut, fin, h.debut, h.fin);
+            });
+            
+            if(conflitSalle) {
+                document.getElementById('editConflitAlert').classList.add('show');
+                document.getElementById('editConflitMessage').innerHTML = 
+                    `<strong>⚠️ Conflit de salle !</strong> La salle <strong>${escapeHtml(salle)}</strong> est occupée le <strong>${jour}</strong> de <strong>${conflitSalle.debut}</strong> à <strong>${conflitSalle.fin}</strong>`;
+                return;
+            }
+            
+            const data = {
+                jour, debut, fin, salle,
+                promotionId: promoId,
+                promotionNom: promotion ? promotion.nom : '',
+                coursId, coursNom: cours.nom,
+                professeurNom: cours.professeurNom || 'N/A',
+                professeurId: cours.professeurId || '',
+                credits: cours.credits || 0,
+                semaineId,
+                semaineLabel: semaine ? semaine.label : '',
+                semaineDebut: semaine ? semaine.debutISO : '',
+                semaineFin: semaine ? semaine.finISO : '',
+                dateExpiration: semaine ? firebase.firestore.Timestamp.fromDate(new Date(new Date(semaine.finISO || semaine.fin).getTime()+7*86400000)) : null,
+                modifiePar: currentUser.id,
+                modifieParNom: currentUser.nomComplet,
+                dateModification: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            try {
+                if(estRepublication) {
+                    // Créer un nouvel horaire dans la semaine choisie (republication)
+                    const nouveau = {...data};
+                    nouveau.creePar = currentUser.id;
+                    nouveau.creeParNom = currentUser.nomComplet;
+                    nouveau.dateCreation = firebase.firestore.FieldValue.serverTimestamp();
+                    nouveau.publie = true;
+                    nouveau.notificationEnvoyee = false;
+                    nouveau.batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    await db.collection('horaires').add(nouveau);
+                    showToast('✅ Horaire republié pour la semaine choisie','success');
+                } else {
+                    // Mise à jour de l'horaire existant
+                    await db.collection('horaires').doc(id).update(data);
+                    showToast('✅ Horaire modifié avec succès','success');
+                }
+                if(editModalInstance) editModalInstance.hide();
+            } catch(err) {
+                console.error(err);
+                showToast('Erreur: '+err.message,'danger');
+            }
+        }
+        
         // ================================================================
-        // ✅ IMPRESSION DE LA SEMAINE
-        // Format avec colonne HEURE dédiée (2ème position)
+        // ✅ IMPRESSION DE LA SEMAINE (NOIR & BLANC)
         // ================================================================
         window.imprimerSemaine = function(semaineId) {
             const horairesSemaine = allHoraires.filter(h => h.semaineId === semaineId);
@@ -1117,43 +1406,43 @@
                     <title>Horaire des cours - ${semaine.label}</title>
                     <style>
                         * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { font-family: 'Times New Roman', 'Segoe UI', serif; background: white; padding: 15px; }
-                        .ticket-horaire { background: white; border: 2px solid #003366; padding: 15px; margin-bottom: 20px; page-break-after: always; }
+                        body { font-family: 'Times New Roman', 'Segoe UI', serif; background: white; padding: 15px; color: #000; }
+                        .ticket-horaire { background: white; border: 2px solid #000; padding: 15px; margin-bottom: 20px; page-break-after: always; }
                         .ticket-horaire:last-child { page-break-after: auto; }
-                        .ticket-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #003366; padding-bottom: 10px; margin-bottom: 12px; }
+                        .ticket-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 12px; }
                         .ticket-header-left { display: flex; align-items: center; gap: 12px; }
-                        .ticket-logo { width: 55px; height: 55px; object-fit: contain; }
+                        .ticket-logo { width: 55px; height: 55px; object-fit: contain; filter: grayscale(100%); }
                         .ticket-titles { display: flex; flex-direction: column; }
-                        .ticket-title-1 { font-size: 13px; font-weight: bold; color: #003366; letter-spacing: 0.5px; }
-                        .ticket-title-2 { font-size: 12px; font-weight: bold; color: #003366; letter-spacing: 0.5px; }
-                        .ticket-header-right { text-align: right; font-size: 12px; font-weight: bold; color: #003366; }
+                        .ticket-title-1 { font-size: 13px; font-weight: bold; color: #000; letter-spacing: 0.5px; }
+                        .ticket-title-2 { font-size: 12px; font-weight: bold; color: #000; letter-spacing: 0.5px; }
+                        .ticket-header-right { text-align: right; font-size: 12px; font-weight: bold; color: #000; }
                         .ticket-date { margin-bottom: 3px; }
-                        .ticket-main-title { text-align: center; font-size: 14px; font-weight: bold; color: #003366; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
+                        .ticket-main-title { text-align: center; font-size: 14px; font-weight: bold; color: #000; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
                         .ticket-table { width: 100%; border-collapse: collapse; font-size: 9px; }
-                        .ticket-table th, .ticket-table td { border: 1px solid #003366; padding: 5px 4px; vertical-align: top; }
-                        .ticket-table thead th { background: #e8f0fa; color: #003366; font-weight: bold; text-align: center; font-size: 10px; padding: 8px 4px; text-transform: uppercase; }
+                        .ticket-table th, .ticket-table td { border: 1px solid #000; padding: 5px 4px; vertical-align: top; }
+                        .ticket-table thead th { background: #e0e0e0; color: #000; font-weight: bold; text-align: center; font-size: 10px; padding: 8px 4px; text-transform: uppercase; }
                         .th-promotion { width: 10%; }
                         .th-heure { width: 8%; }
                         .th-salle { width: 7%; }
                         .th-jour { width: 12.5%; }
-                        .cell-promotion { background: #f0f5fa; font-weight: bold; color: #003366; text-align: center; vertical-align: middle; font-size: 11px; }
-                        .cell-heure { background: #fff8e1; font-weight: bold; color: #c62828; text-align: center; vertical-align: middle; font-size: 10px; white-space: nowrap; }
-                        .cell-salle { background: #fafafa; font-weight: bold; color: #003366; text-align: center; vertical-align: middle; font-size: 10px; }
+                        .cell-promotion { background: #f5f5f5; font-weight: bold; color: #000; text-align: center; vertical-align: middle; font-size: 11px; }
+                        .cell-heure { background: #f5f5f5; font-weight: bold; color: #000; text-align: center; vertical-align: middle; font-size: 10px; white-space: nowrap; }
+                        .cell-salle { background: #fafafa; font-weight: bold; color: #000; text-align: center; vertical-align: middle; font-size: 10px; }
                         .cell-jour { background: white; padding: 4px !important; }
                         .cell-jour.empty { background: #fafafa; }
-                        .cours-bloc { margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px dashed #e0e0e0; }
+                        .cours-bloc { margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px dashed #999; }
                         .cours-bloc:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-                        .cours-nom { font-size: 9px; font-weight: bold; color: #003366; line-height: 1.15; margin-bottom: 2px; }
-                        .cours-prof { font-size: 8px; color: #555; font-style: italic; }
+                        .cours-nom { font-size: 9px; font-weight: bold; color: #000; line-height: 1.15; margin-bottom: 2px; }
+                        .cours-prof { font-size: 8px; color: #333; font-style: italic; }
                         .ticket-footer { margin-top: 15px; display: flex; justify-content: flex-end; }
                         .ticket-signature { text-align: center; min-width: 180px; }
-                        .signature-titre { font-size: 11px; font-weight: bold; color: #003366; margin-bottom: 3px; text-transform: uppercase; }
-                        .signature-date { font-size: 10px; color: #555; margin-bottom: 25px; }
-                        .signature-ligne { border-top: 1px solid #003366; padding-top: 3px; font-size: 9px; color: #003366; }
-                        .ticket-bottom { margin-top: 10px; padding-top: 6px; border-top: 1px dashed #ccc; display: flex; justify-content: space-between; font-size: 7px; color: #999; }
+                        .signature-titre { font-size: 11px; font-weight: bold; color: #000; margin-bottom: 3px; text-transform: uppercase; }
+                        .signature-date { font-size: 10px; color: #333; margin-bottom: 25px; }
+                        .signature-ligne { border-top: 1px solid #000; padding-top: 3px; font-size: 9px; color: #000; }
+                        .ticket-bottom { margin-top: 10px; padding-top: 6px; border-top: 1px dashed #999; display: flex; justify-content: space-between; font-size: 7px; color: #666; }
                         @media print {
                             body { padding: 8mm; background: white; }
-                            .ticket-horaire { margin-bottom: 0; page-break-after: always; border: 1.5px solid #003366; }
+                            .ticket-horaire { margin-bottom: 0; page-break-after: always; border: 1.5px solid #000; }
                             .ticket-horaire:last-child { page-break-after: auto; }
                             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
                             @page { size: A4 landscape; margin: 5mm; }
@@ -1198,7 +1487,4 @@
         window.addEventListener('beforeunload', ()=>{if(unsubscribeHoraires)unsubscribeHoraires();});
     </script>
 </body>
-
-
-
 </html>
