@@ -177,7 +177,6 @@
         .panier-empty { text-align: center; padding: 30px; color: #888; }
         .panier-empty i { font-size: 40px; margin-bottom: 10px; }
         
-        /* Info créneaux occupés */
         .creneaux-occupes {
             background: #f0f4f8;
             border-radius: 10px;
@@ -232,6 +231,27 @@
             cursor: pointer; transition: all 0.3s; font-size: 13px;
         }
         .btn-delete:hover { background: #c82333; }
+
+        .btn-print {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 6px;
+        }
+        .btn-print:hover {
+            background: linear-gradient(135deg, #138496, #0c5460);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+        }
         
         .empty-state { text-align: center; padding: 60px 20px; color: #888; }
         .empty-state i { font-size: 70px; color: #ccc; margin-bottom: 20px; }
@@ -256,6 +276,42 @@
         .info-alert {
             background: #e8f4fd; border-left: 4px solid var(--primary-blue);
             border-radius: 10px; padding: 15px; margin-bottom: 25px; font-size: 14px;
+        }
+
+        .notification-info {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-left: 4px solid var(--success-green);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #1b5e20;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .notification-info i {
+            font-size: 20px;
+            color: var(--success-green);
+        }
+        .notification-info strong {
+            color: #1b5e20;
+        }
+
+        .semaine-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .semaine-header-row h6 {
+            color: var(--primary-blue);
+            margin: 0;
+            flex: 1;
         }
         
         @media (max-width: 768px) {
@@ -282,9 +338,16 @@
                 <h4><i class="bi bi-calendar-week-fill"></i> Publier un horaire</h4>
             </div>
             
+            <div class="notification-info">
+                <i class="bi bi-bell-fill"></i>
+                <div>
+                    <strong>📢 Notification automatique :</strong> Dès que vous publiez un horaire, tous les étudiants de la promotion reçoivent une notification push automatique.
+                </div>
+            </div>
+            
             <div class="info-alert">
                 <i class="bi bi-info-circle-fill"></i>
-                <strong>Fonctionnement :</strong> Sélectionnez la semaine, la promotion et le cours. Pour chaque jour, définissez les horaires et la salle, puis ajoutez au panier. <strong>Le système vérifie uniquement les conflits de créneaux horaires</strong> (même jour, mêmes heures qui se chevauchent). Vous pouvez ajouter plusieurs créneaux pour le même jour s'ils ne se chevauchent pas.
+                <strong>Fonctionnement :</strong> Sélectionnez la semaine, la promotion et le cours. Pour chaque jour, définissez les horaires et la salle, puis ajoutez au panier. <strong>Le système vérifie uniquement les conflits de créneaux horaires</strong>.
             </div>
             
             <!-- Sélecteur de semaine -->
@@ -321,13 +384,11 @@
             
             <hr>
             
-            <!-- Alerte conflit -->
             <div class="conflit-alert" id="conflitAlert">
                 <i class="bi bi-exclamation-triangle-fill"></i>
                 <span id="conflitMessage"></span>
             </div>
             
-            <!-- Sélection du jour -->
             <label class="form-label"><i class="bi bi-calendar-day"></i> Sélectionnez un jour</label>
             <div class="jours-grid" id="joursGrid">
                 <div class="jour-btn" data-jour="Lundi"><i class="bi bi-sun-fill"></i> Lundi</div>
@@ -338,13 +399,11 @@
                 <div class="jour-btn" data-jour="Samedi"><i class="bi bi-cloud-fill"></i> Samedi</div>
             </div>
             
-            <!-- Créneaux déjà occupés pour le jour sélectionné -->
             <div class="creneaux-occupes" id="creneauxOccupes" style="display:none;">
                 <strong><i class="bi bi-info-circle"></i> Créneaux déjà occupés ce jour :</strong>
                 <div id="creneauxList"></div>
             </div>
             
-            <!-- Détails du jour -->
             <div id="jourDetail" style="display:none;">
                 <div class="row">
                     <div class="col-md-4 mb-3">
@@ -365,7 +424,6 @@
                 </button>
             </div>
             
-            <!-- Panier -->
             <div class="panier-container mt-4">
                 <h6><i class="bi bi-cart-fill"></i> Panier d'horaires <span class="badge bg-secondary" id="panierCount">0</span></h6>
                 <div id="panierList">
@@ -484,7 +542,6 @@
         }
         function escapeHtml(t){if(!t)return'';const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
         
-        // Heures qui se chevauchent
         function heuresChevauchent(debut1, fin1, debut2, fin2) {
             return debut1 < fin2 && fin1 > debut2;
         }
@@ -570,7 +627,7 @@
             ).join('');
         }
         
-        // ========== VÉRIFICATION CONFLIT (HEURES uniquement) ==========
+        // ========== VÉRIFICATION CONFLIT ==========
         function verifierConflitHeures(jour, debut, fin, professeurId) {
             if (!selectedSemaineId || !professeurId) return null;
             
@@ -578,7 +635,6 @@
                 if (h.semaineId !== selectedSemaineId) return false;
                 if (h.jour !== jour) return false;
                 if (h.professeurId !== professeurId) return false;
-                // Vérifier le chevauchement des heures
                 return heuresChevauchent(debut, fin, h.debut, h.fin);
             }) || null;
         }
@@ -608,7 +664,6 @@
             document.getElementById('salleHoraire').value = '';
             document.getElementById('conflitAlert').classList.remove('show');
             
-            // Afficher les créneaux déjà occupés pour ce jour
             afficherCreneauxOccupes(selectedJour);
         });
         
@@ -631,27 +686,22 @@
             const cours = allCours.find(c => c.id === coursId);
             if (!cours) { showToast('Cours introuvable','danger'); return; }
             
-            // ⚠️ Vérifier conflit de CRÉNEAU HORAIRE pour le même prof
             const conflitProf = verifierConflitHeures(selectedJour, debut, fin, cours.professeurId);
             if (conflitProf) {
                 document.getElementById('conflitAlert').classList.add('show');
                 document.getElementById('conflitMessage').innerHTML = 
-                    `<strong>⚠️ Conflit de créneau !</strong> <strong>${escapeHtml(conflitProf.professeurNom)}</strong> a déjà un cours le <strong>${selectedJour}</strong> de <strong>${conflitProf.debut}</strong> à <strong>${conflitProf.fin}</strong><br>
-                    <small>Cours : ${escapeHtml(conflitProf.coursNom)} | Salle : ${escapeHtml(conflitProf.salle)}</small>`;
+                    `<strong>⚠️ Conflit de créneau !</strong> <strong>${escapeHtml(conflitProf.professeurNom)}</strong> a déjà un cours le <strong>${selectedJour}</strong> de <strong>${conflitProf.debut}</strong> à <strong>${conflitProf.fin}</strong>`;
                 return;
             }
             
-            // ⚠️ Vérifier conflit de SALLE sur le même créneau
             const conflitSalle = verifierConflitSalle(selectedJour, debut, fin, salle);
             if (conflitSalle) {
                 document.getElementById('conflitAlert').classList.add('show');
                 document.getElementById('conflitMessage').innerHTML = 
-                    `<strong>⚠️ Conflit de salle !</strong> La salle <strong>${escapeHtml(salle)}</strong> est occupée le <strong>${selectedJour}</strong> de <strong>${conflitSalle.debut}</strong> à <strong>${conflitSalle.fin}</strong><br>
-                    <small>Cours : ${escapeHtml(conflitSalle.coursNom)} | Prof : ${escapeHtml(conflitSalle.professeurNom)}</small>`;
+                    `<strong>⚠️ Conflit de salle !</strong> La salle <strong>${escapeHtml(salle)}</strong> est occupée le <strong>${selectedJour}</strong> de <strong>${conflitSalle.debut}</strong> à <strong>${conflitSalle.fin}</strong>`;
                 return;
             }
             
-            // ✅ Pas de conflit → on peut ajouter (même jour, créneau différent autorisé)
             const promotion = allPromotions.find(p => p.id === promoId);
             
             panier.push({
@@ -732,27 +782,50 @@
             btn.innerHTML = '<span class="loading-spinner me-2"></span> Publication...';
             
             try {
+                const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                console.log(`📦 Publication avec batchId: ${batchId}`);
+                console.log(`📊 ${panier.length} créneau(x) à publier`);
+                
                 const batch = db.batch();
                 panier.forEach(p => {
                     const ref = db.collection('horaires').doc();
                     batch.set(ref, {
-                        jour: p.jour, debut: p.debut, fin: p.fin, salle: p.salle,
-                        promotionId: p.promotionId, promotionNom: p.promotionNom,
-                        coursId: p.coursId, coursNom: p.coursNom,
-                        professeurNom: p.professeurNom, professeurId: p.professeurId,
+                        jour: p.jour, 
+                        debut: p.debut, 
+                        fin: p.fin, 
+                        salle: p.salle,
+                        promotionId: p.promotionId, 
+                        promotionNom: p.promotionNom,
+                        coursId: p.coursId, 
+                        coursNom: p.coursNom,
+                        professeurNom: p.professeurNom, 
+                        professeurId: p.professeurId,
                         credits: p.credits,
-                        semaineId: selectedSemaineId, semaineLabel: semaine.label,
-                        semaineDebut: semaine.debutISO, semaineFin: semaine.finISO,
+                        semaineId: selectedSemaineId, 
+                        semaineLabel: semaine.label,
+                        semaineDebut: semaine.debutISO, 
+                        semaineFin: semaine.finISO,
                         dateExpiration: firebase.firestore.Timestamp.fromDate(new Date(semaine.fin.getTime()+7*86400000)),
-                        creePar: currentUser.id, creeParNom: currentUser.nomComplet,
-                        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+                        creePar: currentUser.id, 
+                        creeParNom: currentUser.nomComplet,
+                        dateCreation: firebase.firestore.FieldValue.serverTimestamp(),
+                        publie: true,
+                        notificationEnvoyee: false,
+                        batchId: batchId,
+                        notificationCount: 0
                     });
                 });
                 await batch.commit();
-                showToast(`✅ ${panier.length} créneau(x) publié(s) !`,'success');
+                
+                console.log(`✅ ${panier.length} créneau(x) publié(s)`);
+                
+                showToast(`✅ ${panier.length} créneau(x) publié(s) ! Notification en cours...`,'success');
+                
                 panier = [];
                 afficherPanier();
                 mettreAJourBoutonPublier();
+                
             } catch(err) {
                 console.error(err);
                 showToast('Erreur: '+err.message,'danger');
@@ -795,6 +868,7 @@
             });
         }
         
+        // ========== AFFICHAGE DES HORAIRES ==========
         function afficherHoraires() {
             const container = document.getElementById('horairesContainer');
             if(allHoraires.length===0) {
@@ -804,12 +878,39 @@
             let curSem = '', html = '';
             allHoraires.forEach(h => {
                 if(h.semaineId !== curSem) {
-                    if(curSem) html += '</tbody></table></div></div><br>';
+                    if(curSem) html += '</tbody></table></div></div>';
                     curSem = h.semaineId;
                     const maintenant = new Date();
                     const fin = h.semaineFin ? new Date(h.semaineFin) : null;
                     const expiree = fin && maintenant > fin;
-                    html += `<div class="mb-4"><h6 style="color:var(--primary-blue);"><i class="bi bi-calendar-range"></i> ${escapeHtml(h.semaineLabel||'')} ${expiree?'<span class="badge-expire ms-2">Expirée</span>':'<span class="badge-semaine ms-2">Active</span>'}</h6><div class="table-responsive"><table class="horaires-table"><thead><tr><th>Jour</th><th>Horaires</th><th>Cours</th><th>Promotion</th><th>Professeur</th><th>Salle</th><th style="width:80px;"></th></tr></thead><tbody>`;
+                    
+                    html += `
+                        <div class="mb-4">
+                            <div class="semaine-header-row">
+                                <h6>
+                                    <i class="bi bi-calendar-range"></i> 
+                                    ${escapeHtml(h.semaineLabel||'')} 
+                                    ${expiree?'<span class="badge-expire ms-2">Expirée</span>':'<span class="badge-semaine ms-2">Active</span>'}
+                                </h6>
+                                <button class="btn-print" onclick="imprimerSemaine('${h.semaineId}')">
+                                    <i class="bi bi-printer-fill"></i> Imprimer la semaine
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="horaires-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Jour</th>
+                                            <th>Horaires</th>
+                                            <th>Cours</th>
+                                            <th>Promotion</th>
+                                            <th>Professeur</th>
+                                            <th>Salle</th>
+                                            <th style="width:80px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
                 }
                 html += `<tr><td><span class="badge-jour ${h.jour}">${h.jour}</span></td><td><strong>${h.debut} - ${h.fin}</strong></td><td><span class="badge-cours"><i class="bi bi-book-fill"></i> ${escapeHtml(h.coursNom)}</span></td><td><span class="badge-promo"><i class="bi bi-trophy-fill"></i> ${escapeHtml(h.promotionNom)}</span></td><td><i class="bi bi-person-fill"></i> ${escapeHtml(h.professeurNom)}</td><td>${escapeHtml(h.salle)}</td><td><button class="btn-delete" onclick="supprimerHoraire('${h.id}')"><i class="bi bi-trash-fill"></i></button></td></tr>`;
             });
@@ -821,6 +922,466 @@
             if(!confirm('Supprimer ?')) return;
             await db.collection('horaires').doc(id).delete();
             showToast('Supprimé','warning');
+        };
+        
+        // ================================================================
+        // ✅ IMPRESSION : Format avec colonne HEURE dédiée
+        // 
+        // Structure du tableau :
+        // ┌───────────┬────────┬─────────┬─────────┬───┬─────────┬─────────┐
+        // │ PROMOTION │ HEURE  │ LOCAL   │ LUNDI   │...│ VENDREDI│ SAMEDI  │
+        // ├───────────┼────────┼─────────┼─────────┼───┼─────────┼─────────┤
+        // │           │ 08h-12h│         │ Cours 1 │   │         │         │
+        // │           │ 13h-17h│ D101    │ Cours 2 │   │         │         │
+        // │ Bac 1 AGE ├────────┼─────────┼─────────┼───┼─────────┼─────────┤
+        // │           │ 08h-12h│ B101    │ Cours 1 │   │         │         │
+        // │           │ 13h-17h│         │ Cours 2 │   │         │         │
+        // └───────────┴────────┴─────────┴─────────┴───┴─────────┴─────────┘
+        // ================================================================
+        window.imprimerSemaine = function(semaineId) {
+            const horairesSemaine = allHoraires.filter(h => h.semaineId === semaineId);
+            
+            if(horairesSemaine.length === 0) {
+                showToast('Aucun horaire à imprimer', 'warning');
+                return;
+            }
+            
+            const semaine = semainesDisponibles.find(s => s.id === semaineId) ||
+                           { label: horairesSemaine[0].semaineLabel, debutISO: horairesSemaine[0].semaineDebut, finISO: horairesSemaine[0].semaineFin };
+            
+            const formatDateFr = (isoDate) => {
+                if(!isoDate) return '—';
+                const [y, m, d] = isoDate.split('-');
+                return `${d}/${m}/${y}`;
+            };
+            
+            const dateDebut = formatDateFr(semaine.debutISO);
+            const dateFin = formatDateFr(semaine.finISO);
+            
+            // ⭐ Grouper par promotion
+            const parPromotion = {};
+            horairesSemaine.forEach(h => {
+                const promoId = h.promotionId;
+                if(!parPromotion[promoId]) {
+                    parPromotion[promoId] = {
+                        promotionNom: h.promotionNom,
+                        creneaux: []
+                    };
+                }
+                parPromotion[promoId].creneaux.push(h);
+            });
+            
+            let ticketsHTML = '';
+            
+            Object.values(parPromotion).forEach(promoData => {
+                // ⭐ Grouper par SALLE pour créer les lignes
+                const parSalle = {};
+                promoData.creneaux.forEach(c => {
+                    const salle = c.salle || 'Non spécifiée';
+                    if(!parSalle[salle]) parSalle[salle] = [];
+                    parSalle[salle].push(c);
+                });
+                
+                // ⭐ Pour chaque salle, regrouper les heures par créneau distinct
+                // On va construire une liste de "lignes horaires" 
+                // Chaque ligne aura : une heure début/fin + un cours par jour
+                const lignesParSalle = {};
+                
+                Object.entries(parSalle).forEach(([salle, creneauxSalle]) => {
+                    // Trouver tous les créneaux horaires uniques (debut-fin)
+                    const creneauxUniques = {};
+                    creneauxSalle.forEach(c => {
+                        const key = `${c.debut}_${c.fin}`;
+                        if(!creneauxUniques[key]) {
+                            creneauxUniques[key] = {
+                                debut: c.debut,
+                                fin: c.fin,
+                                jours: {}
+                            };
+                        }
+                        // Pour ce créneau, ajouter les cours du jour
+                        if(!creneauxUniques[key].jours[c.jour]) {
+                            creneauxUniques[key].jours[c.jour] = [];
+                        }
+                        creneauxUniques[key].jours[c.jour].push(c);
+                    });
+                    
+                    // Trier par heure de début
+                    lignesParSalle[salle] = Object.values(creneauxUniques).sort((a, b) => 
+                        (a.debut || '').localeCompare(b.debut || '')
+                    );
+                });
+                
+                // ⭐ Construire les lignes HTML
+                let lignesHTML = '';
+                const salles = Object.keys(lignesParSalle);
+                const nbLignesTotal = salles.reduce((total, salle) => total + lignesParSalle[salle].length, 0);
+                let ligneIndex = 0;
+                
+                salles.forEach((salle, salleIndex) => {
+                    const lignesSalle = lignesParSalle[salle];
+                    const nbLignesSalle = lignesSalle.length;
+                    
+                    lignesSalle.forEach((ligne, idxLigneSalle) => {
+                        const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+                        let cellulesJours = '';
+                        
+                        jours.forEach(jour => {
+                            const coursDuJour = ligne.jours[jour] || [];
+                            
+                            if(coursDuJour.length === 0) {
+                                cellulesJours += `<td class="cell-jour empty"></td>`;
+                            } else {
+                                let contenu = '';
+                                coursDuJour.forEach(c => {
+                                    contenu += `
+                                        <div class="cours-bloc">
+                                            <div class="cours-nom">${escapeHtml(c.coursNom || 'Cours')}</div>
+                                            <div class="cours-prof">${escapeHtml(c.professeurNom || '')}</div>
+                                        </div>
+                                    `;
+                                });
+                                cellulesJours += `<td class="cell-jour">${contenu}</td>`;
+                            }
+                        });
+                        
+                        // Heure au format "08h-12h"
+                        const heureAffichee = (ligne.debut || '').replace(':', 'h') + 
+                                              '-' + 
+                                              (ligne.fin || '').replace(':', 'h');
+                        
+                        lignesHTML += `
+                            <tr>
+                                ${ligneIndex === 0 ? `<td class="cell-promotion" rowspan="${nbLignesTotal}">${escapeHtml(promoData.promotionNom)}</td>` : ''}
+                                <td class="cell-heure">${escapeHtml(heureAffichee)}</td>
+                                ${idxLigneSalle === 0 ? `<td class="cell-salle" rowspan="${nbLignesSalle}">${escapeHtml(salle)}</td>` : ''}
+                                ${cellulesJours}
+                            </tr>
+                        `;
+                        
+                        ligneIndex++;
+                    });
+                });
+                
+                ticketsHTML += `
+                    <div class="ticket-horaire">
+                        <div class="ticket-header">
+                            <div class="ticket-header-left">
+                                <img src="th.png" alt="Logo" class="ticket-logo" onerror="this.style.display='none'">
+                                <div class="ticket-titles">
+                                    <div class="ticket-title-1">UNIVERSITÉ DE LUBUMBASHI</div>
+                                    <div class="ticket-title-2">FACULTÉ DES SCIENCES AGRONOMIQUES</div>
+                                </div>
+                            </div>
+                            <div class="ticket-header-right">
+                                <div class="ticket-date"><strong>DU :</strong> ${dateDebut}</div>
+                                <div class="ticket-date"><strong>AU :</strong> ${dateFin}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket-main-title">HORAIRE DES COURS</div>
+                        
+                        <table class="ticket-table">
+                            <thead>
+                                <tr>
+                                    <th class="th-promotion">PROMOTION</th>
+                                    <th class="th-heure">HEURE</th>
+                                    <th class="th-salle">LOCAL</th>
+                                    <th class="th-jour">LUNDI</th>
+                                    <th class="th-jour">MARDI</th>
+                                    <th class="th-jour">MERCREDI</th>
+                                    <th class="th-jour">JEUDI</th>
+                                    <th class="th-jour">VENDREDI</th>
+                                    <th class="th-jour">SAMEDI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${lignesHTML}
+                            </tbody>
+                        </table>
+                        
+                        <div class="ticket-footer">
+                            <div class="ticket-signature">
+                                <div class="signature-titre">DÉCANAT</div>
+                                <div class="signature-date">Le ${new Date().toLocaleDateString('fr-FR')}</div>
+                                <div class="signature-ligne"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket-bottom">
+                            <span>Document généré par HYBRILINK-TECH</span>
+                            <span>${new Date().toLocaleString('fr-FR')}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            const printWindow = window.open('', '_blank', 'width=1400,height=900');
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="fr">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Horaire des cours - ${semaine.label}</title>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        
+                        body {
+                            font-family: 'Times New Roman', 'Segoe UI', serif;
+                            background: white;
+                            padding: 15px;
+                        }
+                        
+                        .ticket-horaire {
+                            background: white;
+                            border: 2px solid #003366;
+                            padding: 15px;
+                            margin-bottom: 20px;
+                            page-break-after: always;
+                        }
+                        
+                        .ticket-horaire:last-child {
+                            page-break-after: auto;
+                        }
+                        
+                        .ticket-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            border-bottom: 2px solid #003366;
+                            padding-bottom: 10px;
+                            margin-bottom: 12px;
+                        }
+                        
+                        .ticket-header-left {
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                        }
+                        
+                        .ticket-logo {
+                            width: 55px;
+                            height: 55px;
+                            object-fit: contain;
+                        }
+                        
+                        .ticket-titles {
+                            display: flex;
+                            flex-direction: column;
+                        }
+                        
+                        .ticket-title-1 {
+                            font-size: 13px;
+                            font-weight: bold;
+                            color: #003366;
+                            letter-spacing: 0.5px;
+                        }
+                        
+                        .ticket-title-2 {
+                            font-size: 12px;
+                            font-weight: bold;
+                            color: #003366;
+                            letter-spacing: 0.5px;
+                        }
+                        
+                        .ticket-header-right {
+                            text-align: right;
+                            font-size: 12px;
+                            font-weight: bold;
+                            color: #003366;
+                        }
+                        
+                        .ticket-date {
+                            margin-bottom: 3px;
+                        }
+                        
+                        .ticket-main-title {
+                            text-align: center;
+                            font-size: 14px;
+                            font-weight: bold;
+                            color: #003366;
+                            letter-spacing: 2px;
+                            margin-bottom: 12px;
+                            text-transform: uppercase;
+                        }
+                        
+                        .ticket-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            font-size: 9px;
+                        }
+                        
+                        .ticket-table th,
+                        .ticket-table td {
+                            border: 1px solid #003366;
+                            padding: 5px 4px;
+                            vertical-align: top;
+                        }
+                        
+                        .ticket-table thead th {
+                            background: #e8f0fa;
+                            color: #003366;
+                            font-weight: bold;
+                            text-align: center;
+                            font-size: 10px;
+                            padding: 8px 4px;
+                            text-transform: uppercase;
+                        }
+                        
+                        .th-promotion { width: 10%; }
+                        .th-heure { width: 8%; }
+                        .th-salle { width: 7%; }
+                        .th-jour { width: 12.5%; }
+                        
+                        .cell-promotion {
+                            background: #f0f5fa;
+                            font-weight: bold;
+                            color: #003366;
+                            text-align: center;
+                            vertical-align: middle;
+                            font-size: 11px;
+                        }
+                        
+                        .cell-heure {
+                            background: #fff8e1;
+                            font-weight: bold;
+                            color: #c62828;
+                            text-align: center;
+                            vertical-align: middle;
+                            font-size: 10px;
+                            white-space: nowrap;
+                        }
+                        
+                        .cell-salle {
+                            background: #fafafa;
+                            font-weight: bold;
+                            color: #003366;
+                            text-align: center;
+                            vertical-align: middle;
+                            font-size: 10px;
+                        }
+                        
+                        .cell-jour {
+                            background: white;
+                            padding: 4px !important;
+                        }
+                        
+                        .cell-jour.empty {
+                            background: #fafafa;
+                        }
+                        
+                        .cours-bloc {
+                            margin-bottom: 4px;
+                            padding-bottom: 3px;
+                            border-bottom: 1px dashed #e0e0e0;
+                        }
+                        
+                        .cours-bloc:last-child {
+                            margin-bottom: 0;
+                            padding-bottom: 0;
+                            border-bottom: none;
+                        }
+                        
+                        .cours-nom {
+                            font-size: 9px;
+                            font-weight: bold;
+                            color: #003366;
+                            line-height: 1.15;
+                            margin-bottom: 2px;
+                        }
+                        
+                        .cours-prof {
+                            font-size: 8px;
+                            color: #555;
+                            font-style: italic;
+                        }
+                        
+                        .ticket-footer {
+                            margin-top: 15px;
+                            display: flex;
+                            justify-content: flex-end;
+                        }
+                        
+                        .ticket-signature {
+                            text-align: center;
+                            min-width: 180px;
+                        }
+                        
+                        .signature-titre {
+                            font-size: 11px;
+                            font-weight: bold;
+                            color: #003366;
+                            margin-bottom: 3px;
+                            text-transform: uppercase;
+                        }
+                        
+                        .signature-date {
+                            font-size: 10px;
+                            color: #555;
+                            margin-bottom: 25px;
+                        }
+                        
+                        .signature-ligne {
+                            border-top: 1px solid #003366;
+                            padding-top: 3px;
+                            font-size: 9px;
+                            color: #003366;
+                        }
+                        
+                        .ticket-bottom {
+                            margin-top: 10px;
+                            padding-top: 6px;
+                            border-top: 1px dashed #ccc;
+                            display: flex;
+                            justify-content: space-between;
+                            font-size: 7px;
+                            color: #999;
+                        }
+                        
+                        @media print {
+                            body { 
+                                padding: 8mm;
+                                background: white;
+                            }
+                            .ticket-horaire {
+                                margin-bottom: 0;
+                                page-break-after: always;
+                                border: 1.5px solid #003366;
+                            }
+                            .ticket-horaire:last-child {
+                                page-break-after: auto;
+                            }
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color-adjust: exact !important;
+                            }
+                            @page {
+                                size: A4 landscape;
+                                margin: 5mm;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${ticketsHTML}
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                                setTimeout(function() {
+                                    window.close();
+                                }, 1000);
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            showToast(`🖨️ Impression de ${Object.keys(parPromotion).length} promotion(s) en cours...`, 'info');
         };
         
         async function nettoyerExpires() {
